@@ -10,7 +10,8 @@ type Props = {
 };
 
 export function EmailModal({ open, onClose }: Props) {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
@@ -36,17 +37,18 @@ export function EmailModal({ open, onClose }: Props) {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, message }),
+        body: JSON.stringify({ firstName, lastName, email, phone, message }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Något gick fel");
-      // Spara lokalt så admin-inbox kan visa senaste
       try {
         const key = "maison_inbox";
         const prev = JSON.parse(localStorage.getItem(key) || "[]");
         prev.unshift({
           id: Date.now().toString(),
-          name,
+          name: firstName + " " + lastName,
+          firstName,
+          lastName,
           email,
           phone,
           message,
@@ -58,7 +60,8 @@ export function EmailModal({ open, onClose }: Props) {
         localStorage.setItem(key, JSON.stringify(prev.slice(0, 50)));
       } catch {}
       setDone(true);
-      setName("");
+      setFirstName("");
+      setLastName("");
       setEmail("");
       setPhone("");
       setMessage("");
@@ -98,13 +101,22 @@ export function EmailModal({ open, onClose }: Props) {
               och vid starkt intresse aviseras mäklaren direkt.
             </p>
             <form onSubmit={submit} className="space-y-3">
-              <input
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ditt namn"
-                className="w-full bg-black border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-gold/40"
-              />
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  required
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Förnamn"
+                  className="w-full bg-black border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-gold/40"
+                />
+                <input
+                  required
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Efternamn"
+                  className="w-full bg-black border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-gold/40"
+                />
+              </div>
               <input
                 required
                 type="email"

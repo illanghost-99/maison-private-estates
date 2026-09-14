@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-function scoreMessage(message: string, name: string): { score: number; serious: boolean; reason: string } {
-  const t = (message + " " + name).toLowerCase();
+function scoreMessage(message: string, fullName: string): { score: number; serious: boolean; reason: string } {
+  const t = (message + " " + fullName).toLowerCase();
   let score = 40;
   const hot = [
     "köpa", "köper", "bud", "visning", "boka", "värdering", "sälja", "säljer",
@@ -25,24 +25,27 @@ function scoreMessage(message: string, name: string): { score: number; serious: 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const name = String(body.name || "").trim();
+    const firstName = String(body.firstName || body.name || "").trim();
+    const lastName = String(body.lastName || "").trim();
+    const fullName = [firstName, lastName].filter(Boolean).join(" ");
     const email = String(body.email || "").trim();
     const phone = String(body.phone || "").trim();
     const message = String(body.message || "").trim();
 
-    if (!name || !email || !phone || !message) {
-      return NextResponse.json({ error: "Fyll i alla fält" }, { status: 400 });
+    if (!firstName || !lastName || !email || !phone || !message) {
+      return NextResponse.json({ error: "Fyll i alla fält (förnamn, efternamn, e-post, telefon, meddelande)" }, { status: 400 });
     }
     if (!email.includes("@")) {
       return NextResponse.json({ error: "Ogiltig e-post" }, { status: 400 });
     }
 
-    const { score, serious, reason } = scoreMessage(message, name);
+    const { score, serious, reason } = scoreMessage(message, fullName);
 
     let telegramSent = false;
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID;
 
+    // Telegram skickas vid seriösa leads – meddelandet innehåller ALLTID kontaktuppgifter
     if (serious && token && chatId) {
       const text = [
         "🏠 Maison AI – prioritetslead",
@@ -50,7 +53,8 @@ export async function POST(req: NextRequest) {
         "⚠️ " + reason,
         "Score: " + score,
         "",
-        "Namn: " + name,
+        "Förnamn: " + firstName,
+        "Efternamn: " + lastName,
         "Telefon: " + phone,
         "E-post: " + email,
         "",
