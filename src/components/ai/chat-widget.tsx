@@ -17,15 +17,15 @@ const INITIAL_MESSAGES: Message[] = [
     id: "1",
     role: "assistant",
     content:
-      "Välkommen till Maison Private Estates. Jag är din personliga AI-assistent. Hur kan jag hjälpa dig idag? Jag kan svara på frågor om våra bostäder, boka visning eller värdering, eller ge dig marknadsinsikter.",
+      "Välkommen till Maison Private Estates. Jag är din personliga AI-assistent och arbetar dygnet runt tillsammans med vår ansvarige mäklare. Tittar du på något objekt just nu, eller vill du boka värdering, visning eller få en rekommendation?",
     timestamp: new Date(),
   },
 ];
 
 const QUICK_ACTIONS = [
   "Visa aktuella objekt",
+  "Jag tittar på ett objekt",
   "Boka värdering",
-  "Marknadsläge Stockholm",
   "Boka visning",
 ];
 
@@ -199,25 +199,42 @@ export function ChatWidget() {
 function generateResponse(input: string): string {
   const lower = input.toLowerCase();
 
+  if (
+    lower.includes("tittar") ||
+    lower.includes("intresserad") ||
+    lower.includes("projekt") ||
+    lower.includes("strandvägen") ||
+    lower.includes("djursholm") ||
+    lower.includes("södermalm") ||
+    lower.includes("öser") ||
+    lower.includes("vill ha mer info")
+  ) {
+    return "Tack – då når jag dig proaktivt kring just det objektet. Vill du att jag bokar en privat visning, skickar fullständigt prospekt, eller kopplar dig direkt till vår ansvarige mäklare (toppsäljare med flest kundmöten)? Du kan också lämna namn och telefon så återkommer vi inom kort.";
+  }
+
   if (lower.includes("värdering") || lower.includes("boka värdering")) {
-    return "Självklart. Jag kan boka en kostnadsfri värdering åt dig. Vilken adress gäller det, och vilken tid passar dig bäst de närmaste dagarna? Du kan också gå direkt till bokningssidan via menyn.";
+    return "Självklart. Jag bokar gärna en kostnadsfri värdering. Vilken adress gäller det, och vilken tid passar dig bäst de närmaste dagarna? Du kan också gå direkt till bokningssidan via menyn.";
   }
 
   if (lower.includes("visning") || lower.includes("boka visning")) {
-    return "Gärna. Vi har flera kommande visningar. Är du intresserad av ett specifikt objekt, eller vill du att jag visar de mest aktuella visningstiderna i Östermalm, Vasastan eller Djursholm?";
+    return "Gärna. Vi har flera kommande visningar. Är du intresserad av ett specifikt objekt, eller vill du att jag visar de mest aktuella tiderna i Östermalm, Vasastan eller Djursholm? Jag kan också be vår mäklare kontakta dig personligen.";
   }
 
   if (lower.includes("marknad") || lower.includes("prisutveckling") || lower.includes("stockholm")) {
-    return "Marknadsläget i Stockholm är fortsatt stabilt för premiumsegmentet. På Östermalm och i Djursholm ser vi fortsatt stark efterfrågan på objekt över 15 MSEK. Genomsnittlig försäljningstid för våra utvalda objekt ligger just nu på cirka 28 dagar. Vill du ha en mer detaljerad rapport för ett specifikt område?";
+    return "Marknadsläget i Stockholm är fortsatt stabilt för premiumsegmentet. På Östermalm och i Djursholm ser vi stark efterfrågan på objekt över 15 MSEK. Genomsnittlig försäljningstid för våra utvalda objekt ligger kring 28 dagar. Vill du ha en mer detaljerad rapport för ett visst område?";
   }
 
   if (lower.includes("objekt") || lower.includes("till salu") || lower.includes("aktuella")) {
-    return "Just nu har vi flera exklusiva objekt ute. Bland annat en spektakulär våning på Strandvägen med takterrass, en arkitektritad villa i Djursholm samt en penthouse på Södermalm med utsikt över Riddarfjärden. Vill du att jag filtrerar efter område, pris eller typ av bostad?";
+    return "Just nu har vi bland annat en spektakulär våning på Strandvägen med takterrass, en arkitektritad villa i Djursholm och en penthouse på Södermalm. Säg vilket område eller prisspann som passar dig – så rekommenderar jag och ser till att du får uppföljning.";
+  }
+
+  if (lower.includes("mäklare") || lower.includes("grundare") || lower.includes("vem")) {
+    return "Maison leds av vår grundare och ansvarige mäklare – en toppmäklare med flest kundmöten i premiumsegmentet. Du kan läsa mer under Om oss, eller så bokar jag in ett samtal direkt.";
   }
 
   if (lower.includes("pris") || lower.includes("kostar")) {
-    return "Priserna varierar kraftigt beroende på läge, skick och unika kvaliteter. Våra aktuella objekt ligger mellan cirka 12 och 42 miljoner kronor. Berätta gärna mer om dina preferenser så kan jag ge dig mer precisa rekommendationer.";
+    return "Våra aktuella objekt ligger ungefär mellan 12 och 42 miljoner kronor beroende på läge och kvalitet. Berätta gärna om dina preferenser så tar jag fram passande objekt och ser till att du får personlig uppföljning.";
   }
 
-  return "Tack för din fråga. Jag hjälper dig gärna vidare. För mer specifika uppgifter om enskilda objekt, budgivning eller juridiska frågor kan jag antingen ge dig generell vägledning eller koppla dig direkt till vår ansvarige mäklare. Vad vill du veta mer om?";
+  return "Tack för din fråga. Jag hjälper dig gärna vidare – och ser till att vår mäklare får veta om du visar intresse för något objekt. Vill du boka visning, få prospekt eller bli uppringd?";
 }

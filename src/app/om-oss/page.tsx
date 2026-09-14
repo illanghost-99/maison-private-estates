@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Award, Shield, Users, Sparkles } from "lucide-react";
+import { ArrowRight, Award, Shield, Users, Sparkles, Phone, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const metadata = {
   title: "Om oss | Maison Private Estates",
   description:
-    "Maison Private Estates – exklusiv fastighetsförmedling i Stockholm med fokus, diskretion och AI-driven service.",
+    "Maison Private Estates – exklusiv fastighetsförmedling i Stockholm. Grundare och toppmäklare med flest kundmöten i premiumsegmentet.",
 };
 
 export default function OmOssPage() {
@@ -25,10 +25,79 @@ export default function OmOssPage() {
           </h1>
           <p className="text-lg text-gray-400 leading-relaxed">
             Maison Private Estates är en boutique-mäklare specialiserad på
-            Stockholms mest eftertraktade adresser. Vi kombinerar djup lokal
-            expertis med modern teknik för att ge dig en upplevelse som är både
-            personlig och exceptionellt effektiv.
+            Stockholms mest eftertraktade adresser. Vi kombinerar personlig
+            expertis med modern AI-teknik för en upplevelse som är både
+            diskret och exceptionellt effektiv.
           </p>
+        </div>
+      </section>
+
+      {/* Founder */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border border-gold/20 luxury-shadow">
+            <Image
+              src="/images/broker.jpg"
+              alt="Grundare och ansvarig mäklare – Maison Private Estates"
+              fill
+              priority
+              quality={95}
+              className="object-cover object-top"
+              sizes="(max-width: 1024px) 100vw, 50vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+          </div>
+
+          <div>
+            <p className="text-gold text-sm tracking-[0.2em] uppercase mb-3">
+              Grundare & ansvarig mäklare
+            </p>
+            <h2 className="font-display text-3xl sm:text-4xl text-white mb-4">
+              Toppsäljare med flest kundmöten
+            </h2>
+            <p className="text-gray-400 leading-relaxed mb-4">
+              Bakom Maison Private Estates står en mäklare som konsekvent ligger
+              i topp när det gäller antal kundmöten och genomförda affärer i
+              premiumsegmentet. Fokus ligger på kvalitet, närvaro och resultat –
+              inte volym för volymens skull.
+            </p>
+            <p className="text-gray-400 leading-relaxed mb-6">
+              Varje kund får personlig uppföljning. Vår AI-assistent arbetar
+              dygnet runt för att fånga upp intresse, boka möten och se till att
+              inget lead går förlorat – medan du alltid har en mänsklig expert
+              att vända dig till.
+            </p>
+
+            <div className="flex flex-wrap gap-3 mb-8">
+              <div className="rounded-lg border border-gold/20 bg-black-card px-4 py-3">
+                <p className="text-xs text-gray-500">Fokus</p>
+                <p className="text-sm text-white font-medium">Premium Stockholm</p>
+              </div>
+              <div className="rounded-lg border border-gold/20 bg-black-card px-4 py-3">
+                <p className="text-xs text-gray-500">Styrka</p>
+                <p className="text-sm text-white font-medium">Flest kundmöten</p>
+              </div>
+              <div className="rounded-lg border border-gold/20 bg-black-card px-4 py-3">
+                <p className="text-xs text-gray-500">Service</p>
+                <p className="text-sm text-white font-medium">AI + personlig</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link href="/boka-vardering">
+                <Button className="gap-2">
+                  Boka möte
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="/kontakt">
+                <Button variant="outline" className="gap-2">
+                  <Phone className="h-4 w-4" />
+                  Kontakta oss
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -39,8 +108,8 @@ export default function OmOssPage() {
             {[
               {
                 icon: Award,
-                title: "Expertis",
-                text: "Över 15 års erfarenhet av premiumsegmentet i Stockholm. Vi känner varje kvarter.",
+                title: "Toppresultat",
+                text: "Konsekvent flest kundmöten och starka avslut i Stockholms premiumsegment.",
               },
               {
                 icon: Shield,
@@ -54,8 +123,8 @@ export default function OmOssPage() {
               },
               {
                 icon: Sparkles,
-                title: "AI-driven service",
-                text: "Vår digitala assistent arbetar dygnet runt så att du får svar och support när du behöver det.",
+                title: "AI som når ut",
+                text: "När någon visar intresse för ett objekt tar vår AI kontakt – proaktivt, proffsigt och utan att vara påträngande.",
               },
             ].map((item) => (
               <div key={item.title} className="text-center md:text-left">
@@ -74,55 +143,14 @@ export default function OmOssPage() {
         </div>
       </section>
 
-      {/* Story */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="relative aspect-[4/5] rounded-2xl overflow-hidden">
-            <Image
-              src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&q=80"
-              alt="Maison kontor"
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 50vw"
-            />
-          </div>
-          <div>
-            <p className="text-gold text-sm tracking-[0.2em] uppercase mb-4">
-              Vår filosofi
-            </p>
-            <h2 className="font-display text-3xl sm:text-4xl text-white mb-6">
-              Mindre volym.
-              <br />
-              Högre precision.
-            </h2>
-            <p className="text-gray-400 leading-relaxed mb-6">
-              Vi tar medvetet färre uppdrag än genomsnittsmäklaren. Det ger oss
-              tid att verkligen förstå varje bostad, varje kund och varje
-              marknadsmöjlighet. Resultatet är högre slutpriser, snabbare
-              processer och en upplevelse som våra kunder återkommer till.
-            </p>
-            <p className="text-gray-400 leading-relaxed mb-8">
-              Med vår AI-assistent får du dessutom tillgång till support,
-              marknadsinsikter och bokning dygnet runt – utan att tappa den
-              personliga kontakten med din ansvarige mäklare.
-            </p>
-            <Link href="/boka-vardering">
-              <Button className="gap-2">
-                Boka ett möte
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* CTA */}
       <section className="mx-auto max-w-4xl px-4 text-center">
         <h2 className="font-display text-3xl sm:text-4xl text-white mb-4">
           Redo att ta nästa steg?
         </h2>
         <p className="text-gray-400 mb-8">
-          Oavsett om du funderar på att sälja eller köpa – vi finns här.
+          Oavsett om du funderar på att sälja eller köpa – vi finns här, med
+          både personlig service och AI som arbetar dygnet runt.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link href="/boka-vardering">

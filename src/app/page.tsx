@@ -114,34 +114,36 @@ export default function HomePage() {
       <section className="py-24 bg-black-soft border-y border-gold/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden">
+            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border border-gold/15">
               <Image
-                src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&q=80"
-                alt="Mäklare"
+                src="/images/broker.jpg"
+                alt="Grundare och ansvarig mäklare – Maison Private Estates"
                 fill
-                className="object-cover"
+                quality={95}
+                className="object-cover object-top"
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
             </div>
             <div>
               <p className="text-gold text-sm tracking-[0.2em] uppercase mb-4">
-                Om Maison
+                Grundare & toppmäklare
               </p>
               <h2 className="font-display text-4xl sm:text-5xl text-white mb-6 leading-tight">
-                Mer än en mäklare.
+                Flest kundmöten.
                 <br />
-                En partner för livet.
+                Tydliga resultat.
               </h2>
               <p className="text-gray-400 leading-relaxed mb-6">
-                Vi specialiserar oss på Stockholms mest exklusiva bostäder. Med
-                djup lokal kunskap, ett starkt nätverk och en AI-driven
-                serviceplattform ger vi dig en upplevelse som går långt utöver
-                det vanliga.
+                Maison Private Estates leds av en mäklare som konsekvent har
+                flest kundmöten i premiumsegmentet. Fokus på kvalitet, närvaro
+                och affärer – med AI som arbetar dygnet runt så att varje
+                intresserad kund fångas upp.
               </p>
               <p className="text-gray-400 leading-relaxed mb-8">
-                Oavsett om du ska sälja, köpa eller bara vill förstå marknaden
-                – vi finns här för dig, dygnet runt.
+                När någon tittar på våra objekt tar assistenten kontakt
+                proaktivt, proffsigt och utan att vara påträngande. Du får både
+                personlig service och en digital kollega som aldrig sover.
               </p>
               <Link href="/om-oss">
                 <Button variant="outline" className="gap-2">
