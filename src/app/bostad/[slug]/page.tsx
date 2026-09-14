@@ -195,15 +195,18 @@ export default async function PropertyPage({ params }: Props) {
           <div className="space-y-6">
             {/* Price card */}
             <div className="rounded-2xl bg-black-card border border-gold/20 p-6 sticky top-28">
-              <p className="text-sm text-gray-400 mb-1">Utgångspris</p>
-              <p className="font-display text-3xl text-white mb-1">
-                {formatPrice(property.price)}
+              <p className="text-sm text-gray-400 mb-1">
+                {property.price > 0 ? "Utgångspris" : "Pris"}
               </p>
-              {property.pricePerSqm && (
+              <p className="font-display text-3xl text-white mb-1">
+                {property.price > 0 ? formatPrice(property.price) : "På begäran"}
+              </p>
+              {property.pricePerSqm && property.price > 0 && (
                 <p className="text-sm text-gray-500 mb-6">
                   {formatPrice(property.pricePerSqm)} / m²
                 </p>
               )}
+              {property.price <= 0 && <div className="mb-6" />}
 
               <div className="space-y-3">
                 <Button className="w-full gap-2">

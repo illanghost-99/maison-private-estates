@@ -74,9 +74,11 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
           <p className="font-display text-2xl text-white tracking-wide">
             {property.status === "sold" && property.finalPrice
               ? formatPrice(property.finalPrice)
-              : formatPrice(property.price)}
+              : property.price > 0
+              ? formatPrice(property.price)
+              : "Pris på begäran"}
           </p>
-          {property.pricePerSqm && (
+          {property.pricePerSqm && property.price > 0 && (
             <p className="text-xs text-gray-300 mt-0.5">
               {formatPrice(property.pricePerSqm)} / m²
             </p>
