@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 export default function TillSaluPage() {
-  const properties = mockProperties.filter((p) => p.status === "for_sale");
+  const properties = mockProperties.filter((p) => p.status === "for_sale" || p.status === "coming_soon");
 
   return (
     <div className="pt-28 pb-20">

@@ -45,11 +45,14 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
           {property.status === "sold" && (
             <Badge variant="danger">Såld</Badge>
           )}
+          {property.status === "coming_soon" && (
+            <Badge variant="gold">Kommande</Badge>
+          )}
           {property.status === "for_sale" && property.bidStatus && (
             <Badge variant="gold">{property.bidStatus}</Badge>
           )}
           {property.isFeatured && property.status === "for_sale" && (
-            <Badge variant="gold">Utvalt</Badge>
+            <Badge variant="outline">Utvalt</Badge>
           )}
         </div>
 

@@ -21,8 +21,8 @@ export default function SaldaPage() {
             Sålda bostäder
           </h1>
           <p className="text-gray-400 max-w-2xl">
-            Ett urval av nyligen genomförda affärer. Varje försäljning är ett
-            bevis på vår förmåga att maximera värdet för våra kunder.
+            Referensförsäljningar genomförda av Erfan Irandost via HusmanHagberg
+            i Sollentuna – ett urval av avslutade uppdrag.
           </p>
         </div>
 
