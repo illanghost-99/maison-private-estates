@@ -161,23 +161,23 @@ export default function HomePage() {
             <FadeIn direction="right" delay={0.15}>
               <div>
                 <p className="text-gold text-sm tracking-[0.2em] uppercase mb-4">
-                  Grundare & toppmäklare
+                  Erfan Irandost · Reg. Fastighetsmäklare
                 </p>
                 <h2 className="font-display text-4xl sm:text-5xl text-white mb-6 leading-tight">
-                  Flest kundmöten.
+                  Kunden i centrum.
                   <br />
-                  Tydliga resultat.
+                  Hela vägen.
                 </h2>
                 <p className="text-gray-400 leading-relaxed mb-6">
-                  Maison Private Estates leds av en mäklare som konsekvent har
-                  flest kundmöten. Fokus på Sollentuna, kvalitet och affärer –
-                  med AI som arbetar dygnet runt så att varje intresserad kund
-                  fångas upp.
+                  Med över nio års erfarenhet och utbildning från KTH hjälper
+                  Erfan dig att hitta eller sälja ditt hem i Sollentuna. Varje
+                  uppdrag ses som ett förtroende – med struktur, engagemang och
+                  fokus på rätt slutresultat.
                 </p>
                 <p className="text-gray-400 leading-relaxed mb-8">
-                  När någon tittar på våra objekt tar assistenten kontakt
-                  proaktivt och proffsigt. Du får både personlig service och en
-                  digital kollega som aldrig sover.
+                  AI-assistenten arbetar dygnet runt. Erfan tar de viktiga
+                  mötena personligen. Tillsammans får du både snabb service och
+                  en trygg, professionell process.
                 </p>
                 <Link href="/om-oss">
                   <Button variant="outline" className="gap-2">

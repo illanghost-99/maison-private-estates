@@ -261,10 +261,11 @@ function generateResponse(input: string): string {
   // Vem / mäklaren
   if (
     lower.includes("mäklare") ||
+    lower.includes("erfan") ||
     lower.includes("grundare") ||
     lower.includes("vem")
   ) {
-    return "Du pratar med teamet bakom Maison Private Estates. Vår ansvarige mäklare tar de flesta kundmötena personligen och har lång erfarenhet av premiumsegmentet i Stockholm. Vill du att jag bokar in dig för ett samtal eller möte med honom?";
+    return "Du når teamet bakom Maison Private Estates. Ansvarig mäklare är Erfan Irandost – registrerad fastighetsmäklare i Sollentuna med utbildning från KTH och över nio års erfarenhet. Vill du att jag hjälper dig att boka ett samtal eller möte med honom?";
   }
 
   // Tveksamhet / bara tittar
