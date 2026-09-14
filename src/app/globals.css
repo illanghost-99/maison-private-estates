@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+@theme {
+  /* Core Luxury Palette - Black & Gold */
+  --color-black: #0a0a0a;
+  --color-black-soft: #111111;
+  --color-black-elevated: #1a1a1a;
+  --color-black-card: #141414;
+  --color-charcoal: #1f1f1f;
+  
+  --color-gold: #c9a84c;
+  --color-gold-light: #e8d5a3;
+  --color-gold-dark: #a88b3a;
+  --color-gold-muted: #8a7340;
+  --color-champagne: #f5e6c8;
+  
+  --color-white: #fafafa;
+  --color-off-white: #f5f5f0;
+  --color-gray-100: #e5e5e5;
+  --color-gray-300: #a3a3a3;
+  --color-gray-500: #737373;
+  --color-gray-700: #404040;
+  
+  --color-success: #22c55e;
+  --color-warning: #eab308;
+  --color-danger: #ef4444;
+  
+  /* Typography */
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  
+  /* Spacing & Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-gray-700);
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    background-color: var(--color-black);
+    color: var(--color-white);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  
+  ::selection {
+    background-color: var(--color-gold);
+    color: var(--color-black);
+  }
+}
+
+@layer utilities {
+  .text-gold {
+    color: var(--color-gold);
+  }
+  
+  .bg-gold {
+    background-color: var(--color-gold);
+  }
+  
+  .border-gold {
+    border-color: var(--color-gold);
+  }
+  
+  .glass {
+    background: rgba(20, 20, 20, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(201, 168, 76, 0.15);
+  }
+  
+  .glass-strong {
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(201, 168, 76, 0.2);
+  }
+  
+  .gold-gradient {
+    background: linear-gradient(135deg, #c9a84c 0%, #e8d5a3 50%, #c9a84c 100%);
+  }
+  
+  .gold-text-gradient {
+    background: linear-gradient(135deg, #c9a84c 0%, #e8d5a3 50%, #a88b3a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .luxury-shadow {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(201, 168, 76, 0.08);
+  }
+  
+  .gold-glow {
+    box-shadow: 0 0 40px rgba(201, 168, 76, 0.15);
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
