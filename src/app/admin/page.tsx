@@ -65,6 +65,16 @@ export default function AdminPage() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [tab, setTab] = useState<Tab>("oversikt");
+  const [localInbox, setLocalInbox] = useState<
+    { id: string; name: string; email: string; phone: string; message: string; score: number; serious: boolean; telegram?: boolean; createdAt: string }[]
+  >([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("maison_inbox");
+      if (raw) setLocalInbox(JSON.parse(raw));
+    } catch {}
+  }, [tab]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && sessionStorage.getItem("maison_admin") === "1") {
@@ -316,6 +326,40 @@ export default function AdminPage() {
               Meddelanden från hemsidan och AI-agenten. Telefon:{" "}
               <a href="tel:+46736334641" className="text-gold">073-633 46 41</a>
             </p>
+            {localInbox.length > 0 && (
+              <div className="space-y-3 mb-6">
+                <p className="text-xs text-gold uppercase tracking-wider">Från hemsidans mejl-formulär</p>
+                {localInbox.map((item) => (
+                  <div key={item.id} className="p-4 rounded-xl bg-black border border-gold/20">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div>
+                        <p className="text-sm font-medium text-white">{item.name}</p>
+                        <p className="text-[11px] text-gray-600">
+                          Webbformulär · {new Date(item.createdAt).toLocaleString("sv-SE")}
+                          {item.telegram ? " · Telegram skickat" : ""}
+                        </p>
+                      </div>
+                      <Badge variant={item.serious ? "gold" : "outline"}>
+                        Score {item.score}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-400 mb-3">{item.message}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <a href={"tel:" + item.phone}>
+                        <Button size="sm" variant="outline" className="gap-1">
+                          <Phone className="h-3 w-3" /> {item.phone}
+                        </Button>
+                      </a>
+                      <a href={"mailto:" + item.email}>
+                        <Button size="sm" variant="ghost" className="gap-1">
+                          <Mail className="h-3 w-3" /> {item.email}
+                        </Button>
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="space-y-3">
               {inbox.map((item) => (
                 <div key={item.id} className="p-4 rounded-xl bg-black border border-white/5">

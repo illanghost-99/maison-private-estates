@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Mail, Phone, MapPin, Instagram, Linkedin } from "lucide-react";
+import { EmailTrigger } from "@/components/contact/email-modal";
 
 export function Footer() {
   return (
@@ -65,7 +66,7 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-3 text-sm text-gray-400">
                 <Mail className="h-4 w-4 text-gold shrink-0" />
-                <span>erfan.irandost@husmanhagberg.se</span>
+                <EmailTrigger className="text-sm text-gray-400" />
               </li>
             </ul>
           </div>

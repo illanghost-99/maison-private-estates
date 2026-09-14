@@ -1,3 +1,4 @@
+import { EmailTrigger } from "@/components/contact/email-modal";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -59,9 +60,7 @@ export default function KontaktPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white mb-1">E-post</p>
-                  <a href="mailto:erfan.irandost@husmanhagberg.se" className="text-sm text-gray-400 hover:text-gold transition-colors">
-                    Kontakta via formulär / mejl
-                  </a>
+                  <EmailTrigger className="text-sm text-gray-400" />
                 </div>
               </div>
 
