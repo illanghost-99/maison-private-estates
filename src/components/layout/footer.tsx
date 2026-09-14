@@ -57,15 +57,15 @@ export function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-3 text-sm text-gray-400">
                 <MapPin className="h-4 w-4 text-gold mt-0.5 shrink-0" />
-                <span>Strandvägen 7<br />114 56 Stockholm</span>
+                <span>Kungsvägen 26<br />191 45 Sollentuna</span>
               </li>
               <li className="flex items-center gap-3 text-sm text-gray-400">
                 <Phone className="h-4 w-4 text-gold shrink-0" />
-                <span>08-123 45 67</span>
+                <a href="tel:+46736334641" className="hover:text-gold transition-colors">073-633 46 41</a>
               </li>
               <li className="flex items-center gap-3 text-sm text-gray-400">
                 <Mail className="h-4 w-4 text-gold shrink-0" />
-                <span>info@maison-estates.se</span>
+                <span>erfan.irandost@husmanhagberg.se</span>
               </li>
             </ul>
           </div>

@@ -51,10 +51,15 @@ export function Header() {
 
           {/* CTA */}
           <div className="hidden lg:flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <Phone className="h-4 w-4" />
-              <span className="text-xs">08-123 45 67</span>
-            </Button>
+            <Link href="/admin" className="text-xs text-gray-500 hover:text-gold transition-colors px-2">
+              Admin
+            </Link>
+            <a href="tel:+46736334641">
+              <Button variant="ghost" size="sm" className="gap-2">
+                <Phone className="h-4 w-4" />
+                <span className="text-xs">073-633 46 41</span>
+              </Button>
+            </a>
             <Link href="/boka-vardering">
               <Button size="sm" className="gap-2">
                 <Calendar className="h-4 w-4" />
@@ -94,6 +99,9 @@ export function Header() {
           <div className="pt-4 flex flex-col gap-3">
             <Link href="/boka-vardering" onClick={() => setMobileOpen(false)}>
               <Button className="w-full">Boka värdering</Button>
+            </Link>
+            <Link href="/admin" onClick={() => setMobileOpen(false)} className="text-center text-sm text-gray-500">
+              Admin
             </Link>
           </div>
         </div>

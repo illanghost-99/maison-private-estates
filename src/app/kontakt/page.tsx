@@ -35,8 +35,8 @@ export default function KontaktPage() {
                 <div>
                   <p className="text-sm font-medium text-white mb-1">Kontor</p>
                   <p className="text-sm text-gray-400">
-                    Strandvägen 7<br />
-                    114 56 Stockholm
+                    Kungsvägen 26<br />
+                    191 45 Sollentuna
                   </p>
                 </div>
               </div>
@@ -47,7 +47,9 @@ export default function KontaktPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white mb-1">Telefon</p>
-                  <p className="text-sm text-gray-400">08-123 45 67</p>
+                  <a href="tel:+46736334641" className="text-sm text-gray-400 hover:text-gold transition-colors">
+                    073-633 46 41
+                  </a>
                 </div>
               </div>
 
@@ -57,7 +59,9 @@ export default function KontaktPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white mb-1">E-post</p>
-                  <p className="text-sm text-gray-400">info@maison-estates.se</p>
+                  <a href="mailto:erfan.irandost@husmanhagberg.se" className="text-sm text-gray-400 hover:text-gold transition-colors">
+                    Kontakta via formulär / mejl
+                  </a>
                 </div>
               </div>
 
