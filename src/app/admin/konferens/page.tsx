@@ -46,43 +46,24 @@ export default function KonferensPage() {
   const startListenRef = useRef<() => void>(() => {});
 
   const speak = useCallback((text: string, after?: () => void) => {
-    if (!window.speechSynthesis) {
-      setError("Ingen talsyntes. Prova Safari.");
-      after?.();
-      return;
-    }
-    window.speechSynthesis.cancel();
-    try {
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      gain.gain.value = 0.04;
-      osc.frequency.value = 440;
-      osc.start();
-      osc.stop(ctx.currentTime + 0.08);
-      ctx.resume();
-    } catch {}
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "sv-SE";
-    u.rate = 1.15;
-    u.pitch = 0.8;
-    u.volume = 1;
-    const voices = window.speechSynthesis.getVoices();
-    const sv = voices.find((v) => v.lang.toLowerCase().startsWith("sv"));
-    if (sv) u.voice = sv;
+    const clip =
+      /skickar/i.test(text) ? "/audio/skickar.mp3" :
+      /bokat/i.test(text) ? "/audio/bokat.mp3" :
+      /inlagd/i.test(text) ? "/audio/inlagd.mp3" :
+      /tar du/i.test(text) ? "/audio/dettar.mp3" :
+      /mejl|möte eller kund/i.test(text) ? "/audio/vad.mp3" :
+      "/audio/greet.mp3";
     speakingRef.current = true;
     setScene("talk");
-    u.onend = () => {
+    const audio = new Audio(clip);
+    audio.volume = 1;
+    const done = () => {
       speakingRef.current = false;
       after?.();
     };
-    u.onerror = () => {
-      speakingRef.current = false;
-      after?.();
-    };
-    window.speechSynthesis.speak(u);
+    audio.onended = done;
+    audio.onerror = done;
+    audio.play().catch(() => done());
   }, []);
 
   const startListen = useCallback(() => {
@@ -153,24 +134,15 @@ export default function KonferensPage() {
 
   startListenRef.current = startListen;
 
-  const start = async () => {
+  const start = () => {
     setError("");
     liveRef.current = true;
     setLive(true);
-    try {
-      const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-      s.getTracks().forEach((tr) => tr.stop());
-    } catch {
-      setError("Tillåt mikrofonen.");
-    }
-    const tasks = load<WorkTask[]>("maison_tasks", defaultTasks);
-    const p1 = tasks.filter((t) => t.priority === 1 && t.status !== "done");
     setScene("uppgifter");
-    const text =
-      GREETS[Math.floor(Math.random() * GREETS.length)] +
-      (p1.length ? " Först: " + p1[0].title + "." : " Inget akut.") +
-      " Jag lyssnar.";
-    speak(text, startListen);
+    speak("Tjena chefen. Jag lyssnar.", startListen);
+    navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {
+      setError("Tillåt mikrofonen.");
+    });
   };
 
   const stop = () => {
