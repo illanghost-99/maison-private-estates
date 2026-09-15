@@ -12,21 +12,31 @@ interface Message {
   timestamp: Date;
 }
 
+type Booking = {
+  step: number;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  type: string;
+  preferredTime: string;
+};
+
 const INITIAL_MESSAGES: Message[] = [
   {
     id: "1",
     role: "assistant",
     content:
-      "Hej, välkommen till Maison Private Estates. Jag hjälper dig gärna vidare – oavsett om du tittar på ett objekt, vill ha en värdering eller bara vill stämma av marknaden. Vad kan jag hjälpa dig med?",
+      "Hej, jag är Erfans assistent. Jag svarar på vanliga frågor om att köpa och sälja i Sollentuna – och kan boka in ett möte, en visning eller en värdering. Vad kan jag hjälpa dig med?",
     timestamp: new Date(),
   },
 ];
 
 const QUICK_ACTIONS = [
-  "Jag vill boka ett möte",
-  "Berätta om aktuella objekt",
+  "Boka möte",
   "Boka värdering",
-  "Jag tittar på en bostad",
+  "Hur går en försäljning till?",
+  "Vem är Erfan?",
 ];
 
 export function ChatWidget() {
@@ -34,40 +44,141 @@ export function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [booking, setBooking] = useState<Booking | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const pushAssistant = (content: string) => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content,
+        timestamp: new Date(),
+      },
+    ]);
+  };
+
+  const startBooking = (type: string) => {
+    setBooking({
+      step: 1,
+      firstName: "",
+      lastName: "",
+      phone: "",
+      email: "",
+      type,
+      preferredTime: "",
+    });
+    return (
+      "Självklart. Jag bokar " +
+      type +
+      " åt dig. Vad heter du i förnamn?"
+    );
+  };
+
+  const finishBooking = async (data: Booking) => {
+    try {
+      await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          email: data.email,
+          type: data.type,
+          preferredTime: data.preferredTime,
+          message: "Bokning via AI-chatt: " + data.type,
+          booking: true,
+          forceNotify: true,
+        }),
+      });
+    } catch {}
+    setBooking(null);
+    return (
+      "Tack " +
+      data.firstName +
+      ". Jag har skickat förfrågan till Erfan med namn, telefon och e-post. Han återkommer så snart han kan för att bekräfta " +
+      data.type +
+      (data.preferredTime ? " (" + data.preferredTime + ")" : "") +
+      "."
+    );
+  };
+
+  const handleBookingStep = async (text: string): Promise<string> => {
+    if (!booking) return generateGeneral(text);
+    const next = { ...booking };
+    if (next.step === 1) {
+      next.firstName = text;
+      next.step = 2;
+      setBooking(next);
+      return "Tack. Och efternamn?";
+    }
+    if (next.step === 2) {
+      next.lastName = text;
+      next.step = 3;
+      setBooking(next);
+      return "Vilket telefonnummer når Erfan dig bäst på?";
+    }
+    if (next.step === 3) {
+      next.phone = text;
+      next.step = 4;
+      setBooking(next);
+      return "Vilken e-postadress ska vi använda?";
+    }
+    if (next.step === 4) {
+      next.email = text;
+      next.step = 5;
+      setBooking(next);
+      return "Vilken dag och tid passar ungefär? Till exempel tisdag eftermiddag.";
+    }
+    next.preferredTime = text;
+    return await finishBooking(next);
+  };
+
   const handleSend = async (text?: string) => {
     const content = text || input.trim();
     if (!content) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        role: "user",
+        content,
+        timestamp: new Date(),
+      },
+    ]);
     setInput("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      const response = generateResponse(content);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: response,
-          timestamp: new Date(),
-        },
-      ]);
+    setTimeout(async () => {
+      let response: string;
+      if (booking) {
+        response = await handleBookingStep(content);
+      } else {
+        const lower = content.toLowerCase();
+        if (
+          lower.includes("boka") ||
+          lower.includes("möte") ||
+          lower.includes("visning") ||
+          lower.includes("värdering")
+        ) {
+          let type = "ett möte";
+          if (lower.includes("värdering")) type = "en värdering";
+          else if (lower.includes("visning")) type = "en visning";
+          response = startBooking(type);
+        } else {
+          response = generateGeneral(content);
+        }
+      }
+      pushAssistant(response);
       setIsTyping(false);
-    }, 700 + Math.random() * 600);
+    }, 500);
   };
 
   return (
@@ -86,9 +197,7 @@ export function ChatWidget() {
         className={cn(
           "fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[calc(100vh-3rem)] rounded-2xl overflow-hidden flex flex-col transition-all duration-300 origin-bottom-right",
           "bg-black-soft border border-gold/20 shadow-2xl shadow-black/60",
-          isOpen
-            ? "scale-100 opacity-100"
-            : "scale-95 opacity-0 pointer-events-none"
+          isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0 pointer-events-none"
         )}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-gold/10 bg-black-elevated">
@@ -97,13 +206,13 @@ export function ChatWidget() {
               <Sparkles className="h-4 w-4 text-black" />
             </div>
             <div>
-              <p className="text-sm font-medium text-white">Maison AI</p>
-              <p className="text-[11px] text-gold">Online • Svarar direkt</p>
+              <p className="text-sm font-medium text-white">Erfans assistent</p>
+              <p className="text-[11px] text-gold">Online · Bokar möten</p>
             </div>
           </div>
           <button
             onClick={() => setIsOpen(false)}
-            className="h-8 w-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+            className="h-8 w-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5"
           >
             <X className="h-4 w-4" />
           </button>
@@ -111,13 +220,7 @@ export function ChatWidget() {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
           {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={cn(
-                "flex",
-                msg.role === "user" ? "justify-end" : "justify-start"
-              )}
-            >
+            <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
               <div
                 className={cn(
                   "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
@@ -130,12 +233,11 @@ export function ChatWidget() {
               </div>
             </div>
           ))}
-
           {isTyping && (
             <div className="flex justify-start">
               <div className="bg-black-elevated border border-white/5 rounded-2xl rounded-bl-md px-4 py-3">
                 <div className="flex gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-gold/60 animate-bounce [animation-delay:0ms]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-gold/60 animate-bounce" />
                   <span className="h-1.5 w-1.5 rounded-full bg-gold/60 animate-bounce [animation-delay:150ms]" />
                   <span className="h-1.5 w-1.5 rounded-full bg-gold/60 animate-bounce [animation-delay:300ms]" />
                 </div>
@@ -145,7 +247,7 @@ export function ChatWidget() {
           <div ref={messagesEndRef} />
         </div>
 
-        {messages.length < 3 && (
+        {messages.length < 3 && !booking && (
           <div className="px-4 pb-2 flex flex-wrap gap-2">
             {QUICK_ACTIONS.map((action) => (
               <button
@@ -172,14 +274,9 @@ export function ChatWidget() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Skriv din fråga..."
-              className="flex-1 bg-black border border-white/10 rounded-full px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-gold/40 transition-colors"
+              className="flex-1 bg-black border border-white/10 rounded-full px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-gold/40"
             />
-            <Button
-              type="submit"
-              size="icon"
-              className="rounded-full h-10 w-10 shrink-0"
-              disabled={!input.trim() || isTyping}
-            >
+            <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!input.trim() || isTyping}>
               <Send className="h-4 w-4" />
             </Button>
           </form>
@@ -189,95 +286,29 @@ export function ChatWidget() {
   );
 }
 
-/**
- * Professionell, naturlig ton.
- * Mål: leda samtalet mot bokning av möte med mäklaren
- * utan att låta säljande eller konstlat.
- */
-function generateResponse(input: string): string {
+function generateGeneral(input: string): string {
   const lower = input.toLowerCase();
 
-  // Direkt bokning
-  if (
-    lower.includes("boka möte") ||
-    lower.includes("boka ett möte") ||
-    lower.includes("kundmöte") ||
-    lower.includes("träffa mäklare") ||
-    lower.includes("prata med mäklare")
-  ) {
-    return "Självklart. Det enklaste är att du lämnar namn, telefonnummer och ungefär när det passar – så ser vi till att mäklaren återkommer och bokar in en tid. Vill du hellre boka värdering eller en visning direkt?";
+  if (lower.includes("erfan") || lower.includes("vem") || lower.includes("mäklare")) {
+    return "Erfan Irandost är registrerad fastighetsmäklare i Sollentuna, utbildad vid KTH med över nio års erfarenhet inom försäljning och service. Han tar helhetsansvar från första mötet till avslut. Vill du att jag bokar ett samtal med honom?";
   }
-
-  // Tittar på objekt / visar intresse
-  if (
-    lower.includes("tittar") ||
-    lower.includes("intresserad") ||
-    lower.includes("bostad") ||
-    lower.includes("objekt") ||
-    lower.includes("lägenhet") ||
-    lower.includes("villa") ||
-    lower.includes("strandvägen") ||
-    lower.includes("djursholm") ||
-    lower.includes("södermalm") ||
-    lower.includes("öser")
-  ) {
-    return "Bra att du hör av dig. För att komma vidare ordentligt brukar det bästa vara ett kort samtal eller möte med vår mäklare – då kan ni gå igenom just det som är viktigt för dig. Vill du att jag hjälper dig att boka in en tid, eller föredrar du att börja med mer information om ett specifikt objekt?";
+  if (lower.includes("sälj") || lower.includes("försälj")) {
+    return "En försäljning börjar med ett möte och en värdering. Därefter planeras visning, marknadsföring och budgivning. Erfan följer processen hela vägen och återkopplar löpande. Ska jag boka en värdering?";
   }
-
-  // Värdering
-  if (lower.includes("värdering") || lower.includes("vad är min bostad värd")) {
-    return "Absolut. En värdering är kostnadsfri och ger dig en tydlig bild av marknadsläget. Om du vill kan jag ta emot adress och önskemål om tid, så bokar mäklaren in ett möte med dig. Vilken adress gäller det?";
+  if (lower.includes("köp")) {
+    return "När du vill köpa hjälper Erfan dig att formulera vad du söker, bevaka marknaden i Sollentuna och gå vidare när rätt bostad dyker upp. Ett kort möte räcker ofta för att komma igång. Vill du boka det?";
   }
-
-  // Visning
-  if (lower.includes("visning") || lower.includes("boka visning")) {
-    return "Gärna. Säg vilket objekt eller område det gäller, så kan jag antingen ge dig kommande visningstider eller se till att du får en privat genomgång med mäklaren. Många föredrar det senare – det blir mer konkret.";
+  if (lower.includes("sollentuna") || lower.includes("område") || lower.includes("marknad")) {
+    return "Sollentuna har en blandning av villor, radhus och lägenheter – från Tureberg och Häggvik till Edsviken, Viby och Väsjön. Marknaden rör sig, så en aktuell genomgång med Erfan ger en bättre bild än generella siffror. Vill du boka ett möte?";
   }
-
-  // Marknad
-  if (
-    lower.includes("marknad") ||
-    lower.includes("prisutveckling") ||
-    lower.includes("stockholm")
-  ) {
-    return "Premiumsegmentet i Stockholm håller sig stabilt, särskilt i områden som Östermalm och Djursholm. För att få en bild som stämmer för just dig är det ofta mest värdefullt att sitta ner en stund med mäklaren. Ska jag hjälpa dig att boka ett sådant möte?";
+  if (lower.includes("provision") || lower.includes("kostar") || lower.includes("arvode") || lower.includes("pris")) {
+    return "Arvode och upplägg går vi igenom personligen – det beror på uppdraget. Det enklaste är ett kostnadsfritt första möte. Ska jag boka in det?";
   }
-
-  // Pris
-  if (lower.includes("pris") || lower.includes("kostar") || lower.includes("budget")) {
-    return "Priserna varierar beroende på läge och skick – våra objekt ligger ungefär mellan 12 och 42 miljoner. Om du berättar ungefärligt spann och område kan jag peka ut relevanta bostäder. Vill du också att mäklaren ringer upp dig för att stämma av mer i detalj?";
+  if (lower.includes("värdering")) {
+    return "En värdering är kostnadsfri och ger en tydlig bild av läget. Jag kan boka den åt dig direkt om du vill.";
   }
-
-  // Aktuella objekt
-  if (
-    lower.includes("aktuella") ||
-    lower.includes("till salu") ||
-    lower.includes("visa") ||
-    lower.includes("rekommendera")
-  ) {
-    return "Just nu har vi bland annat en våning på Strandvägen, en villa i Djursholm och en penthouse på Södermalm. Vill du att jag filtrerar efter område eller budget? Annars kan mäklaren gå igenom alternativen med dig i ett kort möte – det sparar ofta tid.";
+  if (lower.includes("hej") || lower.includes("hallå") || lower.includes("tjena")) {
+    return "Hej. Jag hjälper dig med frågor om att köpa eller sälja i Sollentuna, och kan boka möte med Erfan. Vad är du ute efter?";
   }
-
-  // Vem / mäklaren
-  if (
-    lower.includes("mäklare") ||
-    lower.includes("erfan") ||
-    lower.includes("grundare") ||
-    lower.includes("vem")
-  ) {
-    return "Du når teamet bakom Maison Private Estates. Ansvarig mäklare är Erfan Irandost – registrerad fastighetsmäklare i Sollentuna med utbildning från KTH och över nio års erfarenhet. Vill du att jag hjälper dig att boka ett samtal eller möte med honom?";
-  }
-
-  // Tveksamhet / bara tittar
-  if (
-    lower.includes("bara tittar") ||
-    lower.includes("vet inte") ||
-    lower.includes("kanske") ||
-    lower.includes("senare")
-  ) {
-    return "Det är helt okej. Många börjar precis där. Om du vill kan du lämna en kontaktuppgift så hör mäklaren av sig när det passar dig – utan förpliktelser. Annars finns jag här om du får frågor längs vägen.";
-  }
-
-  // Standard – alltid mjuk stängning mot möte
-  return "Tack, jag hjälper dig gärna. För att komma vidare på riktigt brukar ett kort möte eller samtal med vår mäklare vara det mest effektiva. Vill du att jag hjälper dig att boka in det, eller har du en mer specifik fråga först?";
+  return "Tack, jag hjälper dig gärna. Jag kan svara på frågor om processen, Sollentuna och Erfans arbetssätt – eller boka ett möte, en visning eller en värdering. Vad vill du göra?";
 }

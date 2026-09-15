@@ -21,8 +21,8 @@ export function Footer() {
               </div>
             </div>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Exklusiv fastighetsförmedling i Stockholms mest eftertraktade områden.
-              Diskret. Professionellt. Resultatinriktat.
+              Personlig mäklartjänst i Sollentuna. Erfan Irandost –
+              registrerad fastighetsmäklare med fokus på trygga affärer.
             </p>
           </div>
 
@@ -33,10 +33,9 @@ export function Footer() {
             </h4>
             <ul className="space-y-3">
               {[
-                { name: "Till salu", href: "/till-salu" },
-                { name: "Sålda bostäder", href: "/salda" },
-                { name: "Boka värdering", href: "/boka-vardering" },
-                { name: "Marknadsrapporter", href: "/marknad" },
+                { name: "Om Erfan", href: "/om-oss" },
+                { name: "Boka möte", href: "/boka-vardering" },
+                { name: "Kontakt", href: "/kontakt" },
               ].map((link) => (
                 <li key={link.name}>
                   <Link

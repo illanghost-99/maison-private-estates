@@ -18,16 +18,14 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Maison Private Estates | Exklusiv Fastighetsförmedling",
+  title: "Erfan Irandost | Fastighetsmäklare Sollentuna",
   description:
-    "Premium fastighetsmäklare i Stockholm. Exklusiva bostäder på Östermalm, Vasastan, Djursholm och mer. Personlig service och marknadsexpertis.",
+    "Erfan Irandost – registrerad fastighetsmäklare i Sollentuna. Boka möte, visning eller värdering. Personlig service från första samtal till affär.",
   keywords: [
-    "fastighetsmäklare",
-    "Stockholm",
-    "Östermalm",
-    "lyxbostäder",
-    "villa",
-    "lägenhet",
+    "fastighetsmäklare Sollentuna",
+    "Erfan Irandost",
+    "värdering",
+    "boka möte",
   ],
 };
 

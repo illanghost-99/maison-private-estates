@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-function scoreMessage(message: string, fullName: string): { score: number; serious: boolean; reason: string } {
+const TG_TOKEN =
+  process.env.TELEGRAM_BOT_TOKEN ||
+  "8626574422:AAHPna-6XZy69W5_onJ0z9i5eQD7qS5wtss";
+const TG_CHAT =
+  process.env.TELEGRAM_CHAT_ID || "8662954140";
+
+function scoreMessage(message: string, fullName: string) {
   const t = (message + " " + fullName).toLowerCase();
   let score = 40;
   const hot = [
@@ -8,18 +14,33 @@ function scoreMessage(message: string, fullName: string): { score: number; serio
     "intresserad", "intresse", "snarast", "idag", "imorgon", "ring", "återkom",
     "lägenhet", "villa", "sollentuna", "edsviken", "viby", "möte", "kontakta",
   ];
-  const mild = ["info", "information", "undrar", "kanske", "titta", "fråga"];
   for (const w of hot) if (t.includes(w)) score += 8;
-  for (const w of mild) if (t.includes(w)) score += 2;
   if (message.trim().length > 80) score += 10;
-  if (message.trim().length > 160) score += 5;
-  if (/\d{2,}/.test(message)) score += 5; // ev. budget/rum
   score = Math.min(99, score);
-  const serious = score >= 65;
-  const reason = serious
-    ? "Seriöst intresse – prioritetsavisering"
-    : "Standardförfrågan – loggad i inbox";
-  return { score, serious, reason };
+  const serious = score >= 60;
+  return {
+    score,
+    serious,
+    reason: serious
+      ? "Seriöst intresse – kontakta snarast"
+      : "Förfrågan via hemsidan",
+  };
+}
+
+async function sendTelegram(text: string) {
+  const res = await fetch(
+    "https://api.telegram.org/bot" + TG_TOKEN + "/sendMessage",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: TG_CHAT,
+        text,
+        disable_web_page_preview: true,
+      }),
+    }
+  );
+  return res.ok;
 }
 
 export async function POST(req: NextRequest) {
@@ -31,52 +52,49 @@ export async function POST(req: NextRequest) {
     const email = String(body.email || "").trim();
     const phone = String(body.phone || "").trim();
     const message = String(body.message || "").trim();
+    const type = String(body.type || "meddelande").trim();
+    const preferredTime = String(body.preferredTime || "").trim();
+    const forceNotify = Boolean(body.forceNotify || body.booking);
 
-    if (!firstName || !lastName || !email || !phone || !message) {
-      return NextResponse.json({ error: "Fyll i alla fält (förnamn, efternamn, e-post, telefon, meddelande)" }, { status: 400 });
-    }
-    if (!email.includes("@")) {
-      return NextResponse.json({ error: "Ogiltig e-post" }, { status: 400 });
+    if (!firstName || !phone) {
+      return NextResponse.json(
+        { error: "Förnamn och telefon krävs" },
+        { status: 400 }
+      );
     }
 
-    const { score, serious, reason } = scoreMessage(message, fullName);
+    const { score, serious, reason } = scoreMessage(
+      message || type + " " + preferredTime,
+      fullName
+    );
+
+    const shouldNotify = forceNotify || serious || type !== "meddelande";
+
+    const text = [
+      "🏠 Maison AI",
+      forceNotify || type !== "meddelande" ? "📅 Bokning / mötesförfrågan" : "✉️ Nytt meddelande",
+      "",
+      "⚠️ " + reason,
+      "Score: " + score,
+      "Typ: " + type,
+      preferredTime ? "Önskad tid: " + preferredTime : "",
+      "",
+      "Förnamn: " + firstName,
+      "Efternamn: " + (lastName || "–"),
+      "Telefon: " + phone,
+      "E-post: " + (email || "–"),
+      "",
+      "Meddelande:",
+      message || "–",
+      "",
+      shouldNotify ? "→ Kontakta kunden snarast." : "→ Loggad i inbox.",
+    ]
+      .filter((line, i, arr) => !(line === "" && arr[i - 1] === ""))
+      .join("\n");
 
     let telegramSent = false;
-    const token = process.env.TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.TELEGRAM_CHAT_ID;
-
-    // Telegram skickas vid seriösa leads – meddelandet innehåller ALLTID kontaktuppgifter
-    if (serious && token && chatId) {
-      const text = [
-        "🏠 Maison AI – prioritetslead",
-        "",
-        "⚠️ " + reason,
-        "Score: " + score,
-        "",
-        "Förnamn: " + firstName,
-        "Efternamn: " + lastName,
-        "Telefon: " + phone,
-        "E-post: " + email,
-        "",
-        "Meddelande:",
-        message,
-        "",
-        "→ Kontakta kunden snarast.",
-      ].join("\n");
-
-      const tg = await fetch(
-        "https://api.telegram.org/bot" + token + "/sendMessage",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text,
-            disable_web_page_preview: true,
-          }),
-        }
-      );
-      telegramSent = tg.ok;
+    if (shouldNotify) {
+      telegramSent = await sendTelegram(text);
     }
 
     return NextResponse.json({

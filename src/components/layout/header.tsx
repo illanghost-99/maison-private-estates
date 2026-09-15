@@ -7,10 +7,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Till salu", href: "/till-salu" },
-  { name: "Sålda", href: "/salda" },
-  { name: "Om oss", href: "/om-oss" },
-  { name: "Marknad", href: "/marknad" },
+  { name: "Om Erfan", href: "/om-oss" },
+  { name: "Boka möte", href: "/boka-vardering" },
   { name: "Kontakt", href: "/kontakt" },
 ];
 
@@ -63,7 +61,7 @@ export function Header() {
             <Link href="/boka-vardering">
               <Button size="sm" className="gap-2">
                 <Calendar className="h-4 w-4" />
-                Boka värdering
+                Boka möte
               </Button>
             </Link>
           </div>
@@ -98,7 +96,7 @@ export function Header() {
           ))}
           <div className="pt-4 flex flex-col gap-3">
             <Link href="/boka-vardering" onClick={() => setMobileOpen(false)}>
-              <Button className="w-full">Boka värdering</Button>
+              <Button className="w-full">Boka möte</Button>
             </Link>
             <Link href="/admin" onClick={() => setMobileOpen(false)} className="text-center text-sm text-gray-500">
               Admin
