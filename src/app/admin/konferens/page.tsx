@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Mic, Square, PhoneOff, Calendar, Mail, Users, ListTodo } from "lucide-react";
+import { Mic, Square, PhoneOff, Calendar, Mail, Users, ListTodo, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { defaultTasks } from "@/lib/admin-data";
 import type { WorkTask, CalEvent } from "@/lib/admin-data";
@@ -31,9 +31,11 @@ export default function KonferensPage() {
   const [scene, setScene] = useState<Scene>("idle");
   const [hint, setHint] = useState("Tryck start och tillåt mikrofon");
   const [error, setError] = useState("");
+  const [muted, setMuted] = useState(false);
   const recRef = useRef<any>(null);
   const speakingRef = useRef(false);
   const liveRef = useRef(false);
+  const mutedRef = useRef(false);
 
   useEffect(() => {
     if (sessionStorage.getItem("maison_admin") === "1") setAuthed(true);
@@ -54,11 +56,18 @@ export default function KonferensPage() {
       /mejl|möte eller kund/i.test(text) ? "/audio/vad.mp3" :
       "/audio/greet.mp3";
     speakingRef.current = true;
+    mutedRef.current = true;
+    setMuted(true);
     setScene("talk");
+    setHint("Ljud av – agenten svarar");
     const audio = new Audio(clip);
     audio.volume = 1;
     const done = () => {
       speakingRef.current = false;
+      mutedRef.current = false;
+      setMuted(false);
+      setHint("Din tur – prata");
+      setScene("listen");
       after?.();
     };
     audio.onended = done;
@@ -83,21 +92,21 @@ export default function KonferensPage() {
       setHint("Lyssnar");
     };
     rec.onend = () => {
-      if (liveRef.current && !speakingRef.current) {
+      if (liveRef.current) {
         try { rec.start(); } catch {}
       }
     };
     rec.onerror = (ev: any) => {
-      if (ev?.error === "no-speech" && liveRef.current) {
+      if (liveRef.current && ev?.error !== "aborted") {
         try { rec.start(); } catch {}
       }
     };
     rec.onresult = (e: any) => {
+      if (mutedRef.current || speakingRef.current) return;
       const last = e.results[e.results.length - 1];
       if (!last?.isFinal) return;
       const text = String(last[0]?.transcript || "").trim();
-      if (!text || speakingRef.current) return;
-      try { rec.stop(); } catch {}
+      if (!text) return;
       setHint("Hörde");
       const t = text.toLowerCase();
       if (/mejl|mail/.test(t)) {
@@ -180,9 +189,39 @@ export default function KonferensPage() {
       </p>
       <p className="text-gray-500 text-xs mb-4">{hint}</p>
       {error && <p className="text-red-400 text-xs mb-4">{error}</p>}
-      <button onClick={live ? stop : start} className="h-14 w-14 rounded-full border border-gold/40 text-gold inline-flex items-center justify-center">
-        {live ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-      </button>
+      <div className="flex items-center justify-center gap-4">
+        <button
+          onClick={live ? stop : start}
+          className="h-14 w-14 rounded-full border border-gold/40 text-gold inline-flex items-center justify-center"
+        >
+          {live ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+        </button>
+        {live && (
+          <button
+            onClick={() => {
+              const next = !muted;
+              mutedRef.current = next;
+              setMuted(next);
+              setHint(next ? "Ljud av – agenten svarar" : "Din tur – prata");
+              setScene(next ? "talk" : "listen");
+            }}
+            className={
+              "h-14 w-14 rounded-full inline-flex items-center justify-center transition-all " +
+              (muted
+                ? "gold-gradient text-black shadow-lg shadow-gold/40"
+                : "border border-white/20 text-gray-500")
+            }
+            aria-label={muted ? "Ljud av" : "Öppna mikrofon"}
+          >
+            {muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+          </button>
+        )}
+      </div>
+      {live && (
+        <p className="text-[11px] text-gray-600 mt-2">
+          {muted ? "Mikrofon av – agenten pratar ostört" : "Mikrofon på – prata nu"}
+        </p>
+      )}
       <div className="mt-8 flex justify-center gap-3">
         <Link href="/admin"><Button variant="outline" size="sm">Admin</Button></Link>
         {live && <Button variant="ghost" size="sm" className="gap-2" onClick={stop}><PhoneOff className="h-4 w-4" />Avsluta</Button>}
