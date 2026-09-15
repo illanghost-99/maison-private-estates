@@ -63,14 +63,47 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const text = String(body.text || "").trim();
+    const audioB64 = String(body.audio || "");
+    const mime = String(body.mime || "audio/mp4");
     const p1: string[] = Array.isArray(body.p1) ? body.p1 : [];
     const history: Turn[] = Array.isArray(body.history) ? body.history.slice(-10) : [];
-    if (!text) return NextResponse.json({ reply: "Säg igen.", action: "none" });
+    if (!text && !audioB64) return NextResponse.json({ reply: "Säg igen.", action: "none" });
 
     const act = actionFrom(text);
     const key = process.env.GEMINI_API_KEY;
     let reply = "";
-    if (key) {
+    if (key && audioB64) {
+      try {
+        const g = await fetch(
+          "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" +
+            encodeURIComponent(key),
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: SYSTEM }] },
+              contents: [
+                {
+                  role: "user",
+                  parts: [
+                    { text: "Lyssna. Svara kort på svenska på det jag säger." },
+                    { inline_data: { mime_type: mime, data: audioB64 } },
+                  ],
+                },
+              ],
+              generationConfig: { maxOutputTokens: 140, temperature: 0.5 },
+            }),
+          }
+        );
+        if (g.ok) {
+          const data = await g.json();
+          reply = String(data.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
+        }
+      } catch {
+        reply = "";
+      }
+    }
+    if (key && !reply && text) {
       try {
         reply = await geminiReply(key, text, history, p1);
       } catch {

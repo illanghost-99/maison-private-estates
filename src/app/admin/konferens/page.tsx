@@ -39,6 +39,9 @@ export default function KonferensPage() {
   const wakeRef = useRef<any>(null);
   const busyRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recMediaRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     if (sessionStorage.getItem("maison_admin") === "1") setAuthed(true);
@@ -181,11 +184,10 @@ export default function KonferensPage() {
     setLive(true);
     setScene("uppgifter");
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-      (window as any).__mic = stream;
+      streamRef.current = stream;
     }).catch(() => {
       setError("Tillåt mikrofonen i Safari.");
     });
-    startListen();
     speak("Tjena chefen. Jag lyssnar.");
     navigator.wakeLock?.request("screen").then((s: any) => {
       wakeRef.current = s;
@@ -218,14 +220,68 @@ export default function KonferensPage() {
       <h1 className="font-display text-4xl text-white mb-8">Konferens</h1>
       <div className="relative mx-auto mb-6 h-48 w-48">
         <div className={"absolute inset-0 rounded-full border border-gold/25 " + (live ? "animate-ping opacity-20" : "opacity-0")} />
-        <div className="relative h-48 w-48 rounded-full gold-gradient flex items-center justify-center text-black">
-          <Icon className="h-16 w-16" />
-        </div>
+        <button
+          type="button"
+          className="relative h-48 w-48 rounded-full gold-gradient flex items-center justify-center text-black mx-auto"
+          onPointerDown={async () => {
+            if (!live) {
+              start();
+              return;
+            }
+            const stream = streamRef.current || (await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null));
+            if (!stream) {
+              setError("Tillåt mikrofonen.");
+              return;
+            }
+            streamRef.current = stream;
+            chunksRef.current = [];
+            const mime = MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "audio/webm";
+            const mr = new MediaRecorder(stream, { mimeType: mime });
+            recMediaRef.current = mr;
+            mr.ondataavailable = (ev) => { if (ev.data.size) chunksRef.current.push(ev.data); };
+            mr.onstop = async () => {
+              const blob = new Blob(chunksRef.current, { type: mr.mimeType });
+              if (blob.size < 800) {
+                setHint("För kort. Håll inne och prata.");
+                return;
+              }
+              setHint("Hör efter...");
+              const buf = await blob.arrayBuffer();
+              let binary = "";
+              const bytes = new Uint8Array(buf);
+              for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+              const b64 = btoa(binary);
+              const tasks = load<WorkTask[]>("maison_tasks", defaultTasks);
+              const p1 = tasks.filter((x) => x.priority === 1 && x.status !== "done").map((x) => x.title);
+              fetch("/api/konferens", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ audio: b64, mime: mr.mimeType, p1, history: historyRef.current }),
+              })
+                .then((r) => r.json())
+                .then((data) => {
+                  const reply = data.reply || "Okej.";
+                  historyRef.current = [...historyRef.current, { role: "assistant", content: reply }].slice(-10);
+                  speak(reply);
+                })
+                .catch(() => setHint("Något strulade."));
+            };
+            mr.start();
+            setHint("Pratar... släpp när du är klar");
+            setScene("listen");
+          }}
+          onPointerUp={() => {
+            try { recMediaRef.current?.stop(); } catch {}
+          }}
+        >
+          <Icon className="h-16 w-16 pointer-events-none" />
+        </button>
       </div>
       <p className="text-gold text-sm mb-1">
         {scene === "kalender" ? "Kalender" : scene === "mejl" ? "Mejl" : scene === "crm" ? "Kund" : scene === "listen" ? "Lyssnar" : scene === "talk" ? "Pratar" : scene === "uppgifter" ? "Dagens lista" : "Redo"}
       </p>
       <p className="text-gray-500 text-xs mb-4">{hint}</p>
+      <p className="text-[11px] text-gray-600 mb-4">Håll inne den stora knappen och prata. Släpp när du är klar.</p>
       {error && <p className="text-red-400 text-xs mb-4">{error}</p>}
       <div className="flex items-center justify-center gap-4">
         <button
