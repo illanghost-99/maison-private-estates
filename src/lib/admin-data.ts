@@ -34,7 +34,7 @@ export interface CalEvent {
   title: string;
   start: string;
   end: string;
-  type: "möte" | "visning" | "värdering" | "uppföljning" | "admin";
+  type: "möte" | "visning" | "värdering" | "fotografering" | "uppföljning" | "admin";
   person?: string;
   location?: string;
   notes?: string;
@@ -60,6 +60,15 @@ export const defaultTasks: WorkTask[] = [
     status: "open",
     due: "Idag",
     relatedName: "Johan Svensson",
+  },
+  {
+    id: "t3b",
+    title: "Fotografering – boka fotograf / var på plats",
+    why: "Bra bilder säljer. Blockera tid i kalendern och se till att bostaden är stylad.",
+    priority: 1,
+    owner: "erfan",
+    status: "open",
+    due: "Innan visning",
   },
   {
     id: "t3",
@@ -101,6 +110,16 @@ export const defaultTasks: WorkTask[] = [
     status: "open",
     agentDraft:
       "Hej,\n\nVille bara stämma av om du fortfarande vill ta ett kort samtal om bostaden. Jag har tid imorgon eftermiddag eller torsdag förmiddag.\n\nSäg vad som passar.\n\nErfan",
+  },
+  {
+    id: "t7",
+    title: "Checklista inför fotografering",
+    why: "Agenten tar fram listan. Du ser till att säljaren är redo när fotografen kommer.",
+    priority: 3,
+    owner: "agent",
+    status: "open",
+    agentDraft:
+      "Inför fotografering\n\n– Boka fotograf och blockera 2 timmar i kalendern\n– Be säljaren städa, tända lampor, ta bort personliga saker\n– Kolla väder/ljus, gärna förmiddag\n– Efteråt: välj 8–12 bilder, agenten kan skriva bildtexter",
   },
 ];
 
@@ -203,6 +222,16 @@ export function defaultWeekEvents(): CalEvent[] {
       end: end(2, 16, 30),
       type: "uppföljning",
       person: "Erik Lindqvist",
+    },
+    {
+      id: "e4",
+      title: "Fotografering",
+      start: at(1, 9),
+      end: end(1, 11),
+      type: "fotografering",
+      person: "Säljare",
+      location: "Enligt objektsadress",
+      notes: "Styling + foto. Blockera restid.",
     },
   ];
 }

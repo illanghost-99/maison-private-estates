@@ -99,6 +99,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!authed) return;
+    fetch("/api/reminders").catch(() => {});
     setTasks(load("maison_tasks", defaultTasks));
     setCrm(load("maison_crm", defaultCrm));
     setEvents(load("maison_events", defaultWeekEvents()));
@@ -254,7 +255,7 @@ export default function AdminPage() {
                 <h2 className="font-display text-xl text-white">Dagens briefing</h2>
               </div>
               <p className="text-sm text-gray-400 mb-4">
-                Fokusera på samtal och möten. Agenten sköter utkast, påminnelser och utvärderingar.
+                Fokusera på samtal, möten och fotografering. Agenten sköter utkast, påminnelser och utvärderingar.
               </p>
               <ol className="space-y-2 text-sm text-gray-200">
                 {p1.slice(0, 3).map((t, i) => (
@@ -372,6 +373,19 @@ export default function AdminPage() {
                   onChange={(e) => setNewEvent({ ...newEvent, when: e.target.value })}
                   className="bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
                 />
+                <select
+                  value={newEvent.type}
+                  onChange={(e) =>
+                    setNewEvent({ ...newEvent, type: e.target.value as CalEvent["type"] })
+                  }
+                  className="bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                >
+                  <option value="möte">Möte</option>
+                  <option value="visning">Visning</option>
+                  <option value="värdering">Värdering</option>
+                  <option value="fotografering">Fotografering</option>
+                  <option value="uppföljning">Uppföljning</option>
+                </select>
                 <Button onClick={addEvent} className="gap-2">
                   <Plus className="h-4 w-4" /> Spara
                 </Button>
