@@ -12,8 +12,9 @@ async function speak(text: string) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "tts-1",
-        voice: "onyx",
+        model: "tts-1-hd",
+        voice: "echo",
+        speed: 1.02,
         input,
         response_format: "mp3",
       }),
@@ -28,15 +29,7 @@ async function speak(text: string) {
       });
     }
   }
-  const url =
-    "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=sv&q=" +
-    encodeURIComponent(input.slice(0, 180));
-  const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
-  if (!res.ok) return NextResponse.json({ error: "tts" }, { status: 502 });
-  const buf = await res.arrayBuffer();
-  return new NextResponse(buf, {
-    headers: { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" },
-  });
+  return NextResponse.json({ error: "tts" }, { status: 502 });
 }
 
 export async function GET(req: NextRequest) {

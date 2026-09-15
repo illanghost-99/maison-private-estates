@@ -52,17 +52,13 @@ export default function KonferensPage() {
 
   const speak = useCallback((text: string, after?: () => void) => {
     speakingRef.current = true;
-    mutedRef.current = true;
-    setMuted(true);
     setScene("talk");
     setHint("Agenten svarar");
     try { audioRef.current?.pause(); } catch {}
     const done = () => {
       speakingRef.current = false;
       busyRef.current = false;
-      mutedRef.current = false;
-      setMuted(false);
-      setHint("Din tur – prata");
+      setHint(mutedRef.current ? "Mikrofon av" : "Lyssnar");
       setScene("listen");
       after?.();
     };

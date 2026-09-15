@@ -3,12 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 type Turn = { role: "user" | "assistant"; content: string };
 
-const SYSTEM = `Du är Erfans personliga mäklarassistent i bilen. Svenska. Kort. Naturligt samtal.
-Max två korta meningar. Ingen humor, inga emojis, ingen robotton.
-Du hjälper Erfan Irandost, mäklare i Sollentuna.
-Använd verktyg när han vill boka möte, lägga in kund eller skicka uppföljningsmejl.
-Ring och SMS tar Erfan själv.
-Om han bara pratar: svara på det han sa och fortsätt samtalet.`;
+const SYSTEM = `Du är Erfans kollega i luren. Man, 30, lugn, rak. Ni känner varandra.
+Prata som en människa i bilen: korta meningar, vardagssvenska, inga listor, inga emojis.
+Svara på precis det han sa. Ställ en följdfråga bara om du saknar namn, tid eller telefon.
+Hjälp honom sälja mer: möten, uppföljning, prioritering.
+Använd verktyg när han vill boka möte, lägga in kund eller skicka mejl.
+Du ringer och smsar inte. Det gör han.
+Inte säljcoach. Inte robot. Inte "hur kan jag hjälpa dig idag".`;
 
 const tools = [
   {
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         temperature: 0.5,
-        max_tokens: 120,
+        max_tokens: 180,
         messages,
         tools,
         tool_choice: "auto",
