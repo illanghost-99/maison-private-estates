@@ -36,6 +36,8 @@ export default function KonferensPage() {
   const speakingRef = useRef(false);
   const liveRef = useRef(false);
   const mutedRef = useRef(false);
+  const historyRef = useRef<{ role: "user" | "assistant"; content: string }[]>([]);
+  const wakeRef = useRef<any>(null);
 
   useEffect(() => {
     if (sessionStorage.getItem("maison_admin") === "1") setAuthed(true);
@@ -104,12 +106,13 @@ export default function KonferensPage() {
       const text = String(last[0]?.transcript || "").trim();
       if (!text) return;
       setHint("Hörde dig");
+      historyRef.current = [...historyRef.current, { role: "user", content: text }].slice(-10);
       const tasks = load<WorkTask[]>("maison_tasks", defaultTasks);
       const p1 = tasks.filter((x) => x.priority === 1 && x.status !== "done").map((x) => x.title);
       fetch("/api/konferens", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, p1 }),
+        body: JSON.stringify({ text, p1, history: historyRef.current }),
       })
         .then((r) => r.json())
         .then((data) => {
@@ -127,7 +130,9 @@ export default function KonferensPage() {
             save("maison_events", events);
           } else if (data.action === "mail") setScene("mejl");
           else if (data.action === "crm") setScene("crm");
-          speak(data.reply || "Okej.");
+          const reply = data.reply || "Okej.";
+          historyRef.current = [...historyRef.current, { role: "assistant", content: reply }].slice(-10);
+          speak(reply);
         })
         .catch(() => speak("Säg igen."));
     };
@@ -146,6 +151,9 @@ export default function KonferensPage() {
     navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {
       setError("Tillåt mikrofonen.");
     });
+    navigator.wakeLock?.request("screen").then((s: any) => {
+      wakeRef.current = s;
+    }).catch(() => {});
   };
 
   const stop = () => {
@@ -153,7 +161,7 @@ export default function KonferensPage() {
     setLive(false);
     setScene("idle");
     try { recRef.current?.stop(); } catch {}
-    window.speechSynthesis?.cancel();
+    try { wakeRef.current?.release(); } catch {}
     setHint("Pausad");
   };
 
