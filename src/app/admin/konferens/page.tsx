@@ -31,7 +31,7 @@ export default function KonferensPage() {
   const [scene, setScene] = useState<Scene>("idle");
   const [hint, setHint] = useState("Tryck start och tillåt mikrofon");
   const [error, setError] = useState("");
-  const recRef = useRef<SpeechRecognition | null>(null);
+  const recRef = useRef<any>(null);
   const speakingRef = useRef(false);
   const liveRef = useRef(false);
 
@@ -39,8 +39,8 @@ export default function KonferensPage() {
     if (sessionStorage.getItem("maison_admin") === "1") setAuthed(true);
     const warm = () => window.speechSynthesis?.getVoices();
     warm();
-    window.speechSynthesis?.addEventListener("voiceschanged", warm);
-    return () => window.speechSynthesis?.removeEventListener("voiceschanged", warm);
+    if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = warm;
+    return () => { if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = null; };
   }, []);
 
   const startListenRef = useRef<() => void>(() => {});
@@ -86,10 +86,7 @@ export default function KonferensPage() {
   }, []);
 
   const startListen = useCallback(() => {
-    const w = window as unknown as {
-      SpeechRecognition?: new () => SpeechRecognition;
-      webkitSpeechRecognition?: new () => SpeechRecognition;
-    };
+    const w = window as any;
     const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
     if (!SR) {
       setError("Lyssning saknas. Använd Safari eller Chrome.");
@@ -111,7 +108,7 @@ export default function KonferensPage() {
       }
     };
     rec.onerror = () => setHint("Hörde inget. Prata igen.");
-    rec.onresult = (e: SpeechRecognitionEvent) => {
+    rec.onresult = (e: any) => {
       const text = e.results[0][0].transcript;
       if (!text) return;
       setHint("Hörde dig");
