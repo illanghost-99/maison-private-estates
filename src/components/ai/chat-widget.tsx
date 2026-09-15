@@ -97,6 +97,17 @@ export function ChatWidget() {
           forceNotify: true,
         }),
       });
+      const { pushToCrm } = await import("@/lib/crm-client");
+      pushToCrm({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
+        email: data.email,
+        message: "Bokning via AI-chatt: " + data.type,
+        flag: "hot",
+        source: "AI-chatt",
+        type: data.type,
+      });
     } catch {}
     setBooking(null);
     return (

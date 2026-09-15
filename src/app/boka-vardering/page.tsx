@@ -46,6 +46,17 @@ export default function BokaVarderingPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Kunde inte skicka");
+      const { pushToCrm } = await import("@/lib/crm-client");
+      pushToCrm({
+        firstName,
+        lastName,
+        phone: form.phone,
+        email: form.email,
+        message: form.message || "Bokning via formulär",
+        flag: "hot",
+        source: "Bokningsformulär",
+        type: "värdering / möte",
+      });
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Kunde inte skicka");
