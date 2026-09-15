@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Mic, Send } from "lucide-react";
+import { Mic, Send, PhoneOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { defaultTasks } from "@/lib/admin-data";
 import type { WorkTask, CalEvent, CrmPerson } from "@/lib/admin-data";
@@ -24,20 +24,24 @@ function save(key: string, value: unknown) {
 
 export default function KonferensPage() {
   const [authed, setAuthed] = useState(false);
-  const [hint, setHint] = useState("Skriv eller håll inne mikrofonen");
+  const [hint, setHint] = useState("Tryck en gång för att starta samtalet");
   const [input, setInput] = useState("");
-  const [holding, setHolding] = useState(false);
+  const [live, setLive] = useState(false);
+  const [recOn, setRecOn] = useState(false);
   const [lines, setLines] = useState<{ who: string; text: string }[]>([]);
+  const liveRef = useRef(false);
+  const recOnRef = useRef(false);
   const streamRef = useRef<MediaStream | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const histRef = useRef<{ role: string; content: string }[]>([]);
+  const timerRef = useRef<any>(null);
 
   useEffect(() => {
     if (sessionStorage.getItem("maison_admin") === "1") setAuthed(true);
   }, []);
 
-  function playClip(text: string) {
+  function playClip(text: string, after?: () => void) {
     const clip =
       /bokar|bokat|möte/i.test(text) ? "/audio/bokat.mp3" :
       /mejlen|skickar/i.test(text) ? "/audio/skickar.mp3" :
@@ -45,7 +49,9 @@ export default function KonferensPage() {
       /tjena|lyssnar|här/i.test(text) ? "/audio/greet.mp3" :
       "/audio/vad.mp3";
     const a = new Audio(clip);
-    a.play().catch(() => {});
+    a.onended = () => after?.();
+    a.onerror = () => after?.();
+    a.play().catch(() => after?.());
   }
 
   async function ask(payload: Record<string, unknown>) {
@@ -71,30 +77,12 @@ export default function KonferensPage() {
       });
       save("maison_events", events);
     }
-    if (data.action === "crm") {
-      const crm = load<CrmPerson[]>("maison_crm", []);
-      crm.unshift({
-        id: "c" + Date.now(),
-        firstName: "Kund",
-        lastName: "",
-        phone: "",
-        email: "",
-        stage: "ny",
-        intent: "okänt",
-        score: 70,
-        area: "Konferens",
-        lastTouch: "Nu",
-        nextStep: "Ring",
-        notes: String(payload.text || ""),
-        source: "Konferens",
-        flag: "📳",
-      });
-      save("maison_crm", crm.slice(0, 80));
-    }
     histRef.current = [...histRef.current, { role: "assistant", content: reply }].slice(-10);
     setLines((l) => [...l, { who: "Agent", text: reply }]);
-    setHint("Skriv eller håll inne mikrofonen");
-    playClip(reply);
+    setHint("Agenten svarar");
+    playClip(reply, () => {
+      if (liveRef.current) startRec();
+    });
   }
 
   async function sendText() {
@@ -106,8 +94,8 @@ export default function KonferensPage() {
     await ask({ text });
   }
 
-  async function holdStart(e: any) {
-    e.preventDefault();
+  async function startRec() {
+    if (!liveRef.current || recOnRef.current) return;
     try {
       const stream = streamRef.current || (await navigator.mediaDevices.getUserMedia({ audio: true }));
       streamRef.current = stream;
@@ -118,33 +106,68 @@ export default function KonferensPage() {
       mr.ondataavailable = (ev) => {
         if (ev.data && ev.data.size) chunksRef.current.push(ev.data);
       };
-      mr.start(200);
-      setHolding(true);
-      setHint("Pratar... släpp för att skicka");
+      mr.onstop = async () => {
+        recOnRef.current = false;
+        setRecOn(false);
+        clearTimeout(timerRef.current);
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || "audio/mp4" });
+        if (!liveRef.current) return;
+        if (blob.size < 800) {
+          setHint("Inget tal. Lyssnar igen...");
+          if (liveRef.current) setTimeout(() => startRec(), 400);
+          return;
+        }
+        setLines((l) => [...l, { who: "Du", text: "(röst)" }]);
+        const buf = await blob.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let bin = "";
+        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        await ask({ audio: btoa(bin), mime: mr.mimeType || "audio/mp4" });
+      };
+      mr.start(250);
+      recOnRef.current = true;
+      setRecOn(true);
+      setHint("Lyssnar – prata. Tryck igen för att skicka.");
+      timerRef.current = setTimeout(() => {
+        if (recRef.current && recRef.current.state === "recording") recRef.current.stop();
+      }, 7000);
     } catch {
-      setHint("Tillåt mikrofonen, eller skriv i stället.");
+      setHint("Tillåt mikrofonen, eller skriv.");
     }
   }
 
-  function holdEnd(e: any) {
-    e.preventDefault();
-    setHolding(false);
-    const mr = recRef.current;
-    if (!mr || mr.state === "inactive") return;
-    mr.onstop = async () => {
-      const blob = new Blob(chunksRef.current, { type: mr.mimeType || "audio/mp4" });
-      if (blob.size < 600) {
-        setHint("För kort. Håll längre eller skriv.");
+  function stopRec() {
+    clearTimeout(timerRef.current);
+    try {
+      if (recRef.current && recRef.current.state === "recording") recRef.current.stop();
+    } catch {}
+  }
+
+  async function toggle() {
+    if (!liveRef.current) {
+      liveRef.current = true;
+      setLive(true);
+      try {
+        streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch {
+        setHint("Tillåt mikrofonen.");
         return;
       }
-      setLines((l) => [...l, { who: "Du", text: "(röst)" }]);
-      const buf = await blob.arrayBuffer();
-      const bytes = new Uint8Array(buf);
-      let bin = "";
-      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-      await ask({ audio: btoa(bin), mime: mr.mimeType || "audio/mp4" });
-    };
-    try { mr.stop(); } catch {}
+      setHint("Samtal igång");
+      playClip("Tjena chefen. Jag lyssnar.", () => startRec());
+      return;
+    }
+    if (recOnRef.current) stopRec();
+    else startRec();
+  }
+
+  function endCall() {
+    liveRef.current = false;
+    setLive(false);
+    stopRec();
+    try { streamRef.current?.getTracks().forEach((t) => t.stop()); } catch {}
+    streamRef.current = null;
+    setHint("Avslutat. Tryck för att starta igen.");
   }
 
   if (!authed) {
@@ -156,14 +179,14 @@ export default function KonferensPage() {
   }
 
   return (
-    <div className="pt-24 pb-8 min-h-screen bg-black px-4 max-w-md mx-auto">
+    <div className="pt-24 pb-8 min-h-screen bg-black px-4 max-w-md mx-auto select-none" style={{ WebkitUserSelect: "none", WebkitTouchCallout: "none" }}>
       <p className="text-gold text-xs tracking-[0.25em] uppercase text-center">Konferens</p>
       <h1 className="font-display text-3xl text-white text-center mt-2 mb-4">Prata med agenten</h1>
       <p className="text-center text-gray-500 text-xs mb-4">{hint}</p>
 
-      <div className="h-56 overflow-y-auto rounded-xl border border-gold/15 p-3 mb-5 space-y-2">
+      <div className="h-52 overflow-y-auto rounded-xl border border-gold/15 p-3 mb-5 space-y-2 select-text" style={{ WebkitUserSelect: "text" }}>
         {lines.length === 0 && (
-          <p className="text-gray-600 text-sm">Inget ännu. Skriv “boka möte” eller håll inne mikrofonen.</p>
+          <p className="text-gray-600 text-sm">Tryck en gång på knappen. Sen rullar samtalet. Tryck Avsluta när du är klar.</p>
         )}
         {lines.map((m, i) => (
           <p key={i} className={m.who === "Agent" ? "text-gold text-sm" : "text-white text-sm"}>
@@ -175,23 +198,30 @@ export default function KonferensPage() {
 
       <button
         type="button"
-        className={"mx-auto mb-5 h-28 w-28 rounded-full flex items-center justify-center text-black " + (holding ? "bg-white scale-105" : "gold-gradient")}
-        style={{ touchAction: "none" }}
-        onPointerDown={holdStart}
-        onPointerUp={holdEnd}
-        onPointerCancel={holdEnd}
-        onTouchStart={holdStart}
-        onTouchEnd={holdEnd}
+        onClick={toggle}
+        className={"mx-auto mb-3 h-28 w-28 rounded-full flex items-center justify-center text-black " + (recOn ? "bg-white" : "gold-gradient")}
+        style={{ touchAction: "manipulation", WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
       >
         <Mic className="h-10 w-10" />
       </button>
+      <p className="text-center text-[11px] text-gray-600 mb-4">
+        {live ? (recOn ? "Lyssnar nu" : "Tryck för att prata") : "Tryck för att starta"}
+      </p>
+
+      {live && (
+        <div className="text-center mb-5">
+          <Button type="button" variant="ghost" size="sm" onClick={endCall} className="gap-2">
+            <PhoneOff className="h-4 w-4" /> Avsluta samtal
+          </Button>
+        </div>
+      )}
 
       <div className="flex gap-2">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendText()}
-          placeholder="Skriv här om rösten strular"
+          placeholder="Skriv om du vill"
           className="flex-1 rounded-lg bg-white/5 border border-gold/20 px-3 py-3 text-white text-sm"
         />
         <Button type="button" onClick={sendText} className="shrink-0">
