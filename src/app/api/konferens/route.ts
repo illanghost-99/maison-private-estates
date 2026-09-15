@@ -1,8 +1,8 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 
-const SYSTEM = `Du är Erfans kollega. Svenska. Korta meningar. Rak. Ingen emoji.
-Bekräfta bokning, kund eller mejl om han ber om det. Ring inte.`;
+import { AGENT_SYSTEM } from "@/lib/agent-prompt";
+const SYSTEM = AGENT_SYSTEM;
 
 export async function POST(req: NextRequest) {
   try {
