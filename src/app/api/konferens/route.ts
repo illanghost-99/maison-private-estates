@@ -92,102 +92,41 @@ export async function POST(req: NextRequest) {
     if (/hej|tjena|hallå|hör du/.test(t))
       return NextResponse.json({ reply: "Här. Jag lyssnar.", action: "none" });
 
-    const key = process.env.OPENAI_API_KEY;
-    if (!key) {
-      return NextResponse.json({
-        reply: "Uppfattat. Ska jag boka, lägga in kund eller skicka mejl?",
-        action: "none",
-      });
+    const gemini = process.env.GEMINI_API_KEY;
+    if (gemini) {
+      const contents = [
+        ...history.map((h) => ({
+          role: h.role === "assistant" ? "model" : "user",
+          parts: [{ text: h.content }],
+        })),
+        { role: "user", parts: [{ text }] },
+      ];
+      const g = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + gemini,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemInstruction: {
+              parts: [{ text: SYSTEM + (p1.length ? " Viktigast idag: " + p1.join("; ") + "." : "") }],
+            },
+            contents,
+            generationConfig: { maxOutputTokens: 120, temperature: 0.6 },
+          }),
+        }
+      );
+      if (g.ok) {
+        const data = await g.json();
+        const reply = String(data.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
+        if (reply) return NextResponse.json({ reply, action: "none" });
+      }
     }
 
-    const messages: { role: string; content: string | null; tool_calls?: unknown }[] = [
-      {
-        role: "system",
-        content:
-          SYSTEM +
-          (p1.length ? " Viktigast idag: " + p1.join("; ") + "." : " Inga P1 just nu."),
-      },
-      ...history.map((h) => ({ role: h.role, content: h.content })),
-      { role: "user", content: text },
-    ];
-
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + key,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        temperature: 0.5,
-        max_tokens: 180,
-        messages,
-        tools,
-        tool_choice: "auto",
-      }),
+    return NextResponse.json({
+      reply: "Uppfattat. Ska jag boka, lägga in kund eller skicka mejl?",
+      action: "none",
     });
 
-    if (!res.ok) {
-      const err = await res.text();
-      console.error("openai", res.status, err.slice(0, 300));
-      return NextResponse.json({
-        reply: "Uppfattat. Ska jag boka, lägga in kund eller skicka mejl?",
-        action: "none",
-      });
-    }
-
-    const data = await res.json();
-    const msg = data.choices?.[0]?.message;
-    const toolCalls = msg?.tool_calls as
-      | { function: { name: string; arguments: string } }[]
-      | undefined;
-
-    if (toolCalls?.length) {
-      const call = toolCalls[0];
-      let args: Record<string, string> = {};
-      try {
-        args = JSON.parse(call.function.arguments || "{}");
-      } catch {
-        args = {};
-      }
-      if (call.function.name === "boka_mote") {
-        return NextResponse.json({
-          reply: "Jag bokar " + (args.namn || "kunden") + (args.när ? " " + args.när : "") + ".",
-          action: "book",
-          event: {
-            title: (args.typ || "Möte") + " " + (args.namn || ""),
-            person: args.namn || "",
-            phone: args.telefon || "",
-            email: args.epost || "",
-            when: args.när || "",
-            notes: args.anteckning || text,
-            type: args.typ || "möte",
-          },
-        });
-      }
-      if (call.function.name === "lagg_in_kund") {
-        return NextResponse.json({
-          reply: "Kunden " + (args.fornamn || "") + " är inne i CRM.",
-          action: "crm",
-          person: {
-            firstName: args.fornamn || "Kund",
-            lastName: args.efternamn || "",
-            phone: args.telefon || "",
-            email: args.epost || "",
-            notes: args.anteckning || text,
-          },
-        });
-      }
-      if (call.function.name === "skicka_uppfoljning") {
-        return NextResponse.json({
-          reply: "Jag skickar dagens uppföljningsmejl.",
-          action: "mail",
-        });
-      }
-    }
-
-    const reply = String(msg?.content || "").trim() || "Okej. Jag lyssnar.";
-    return NextResponse.json({ reply, action: "none" });
   } catch {
     return NextResponse.json({ reply: "Säg igen.", action: "none" });
   }
