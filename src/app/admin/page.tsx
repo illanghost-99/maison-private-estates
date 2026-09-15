@@ -33,9 +33,11 @@ import {
   type CalEvent,
   type Priority,
 } from "@/lib/admin-data";
+import type { Followup } from "@/lib/followups";
+import { dueNow } from "@/lib/followups";
 
 const ADMIN_PIN = "2580";
-type Tab = "oversikt" | "uppgifter" | "kalender" | "crm" | "agent" | "inbox";
+type Tab = "oversikt" | "uppgifter" | "kalender" | "crm" | "agent" | "inbox" | "uppfoljning";
 
 function load<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -90,6 +92,7 @@ export default function AdminPage() {
   const [localInbox, setLocalInbox] = useState<
     { id: string; name: string; email: string; phone: string; message: string; score: number; serious: boolean; telegram?: boolean; createdAt: string }[]
   >([]);
+  const [followups, setFollowups] = useState<Followup[]>([]);
   const [draftOpen, setDraftOpen] = useState<string | null>(null);
   const [newEvent, setNewEvent] = useState({ title: "", person: "", when: "", type: "möte" as CalEvent["type"] });
 
@@ -154,6 +157,13 @@ export default function AdminPage() {
     setEvents(load("maison_events", defaultWeekEvents()));
     setActivity(load("maison_activity", []));
     setLocalInbox(load("maison_inbox", []));
+    const fus = load<Followup[]>("maison_followups", []);
+    const ready = dueNow(fus).map((f) =>
+      f.status === "scheduled" ? { ...f, status: "ready" as const } : f
+    );
+    const mergedFu = fus.map((f) => ready.find((r) => r.id === f.id) || f);
+    setFollowups(mergedFu);
+    save("maison_followups", mergedFu);
     logActivity("Öppnade adminpanelen");
     setActivity(load("maison_activity", []));
   }, [authed]);
@@ -167,6 +177,9 @@ export default function AdminPage() {
   useEffect(() => {
     if (authed) save("maison_events", events);
   }, [events, authed]);
+  useEffect(() => {
+    if (authed) save("maison_followups", followups);
+  }, [followups, authed]);
 
   const unlock = (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,6 +288,7 @@ export default function AdminPage() {
             ["crm", "CRM", Users],
             ["agent", "Agenten", Bot],
             ["inbox", "Inbox", Inbox],
+            ["uppfoljning", "Uppföljning", Mail],
           ] as const).map(([id, label, Icon]) => (
             <button
               key={id}
@@ -595,6 +609,68 @@ export default function AdminPage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {tab === "uppfoljning" && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">
+              Automatiska mejl: tack efter 2 timmar, påminnelse efter 2 dygn, extra vid visning/värdering.
+              Utan Resend öppnas mejlet hos dig – agenten loggar och avisera på Telegram.
+            </p>
+            {followups.length === 0 && (
+              <p className="text-sm text-gray-500">Inga uppföljningar ännu. De skapas när en kund lämnar e-post.</p>
+            )}
+            {followups.map((f) => (
+              <div key={f.id} className="rounded-xl bg-black-card border border-white/5 p-5">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div>
+                    <p className="text-white text-sm font-medium">
+                      {f.subject} · {f.firstName} {f.lastName}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {f.kind} · {new Date(f.dueAt).toLocaleString("sv-SE")} · {f.status}
+                    </p>
+                    <pre className="mt-3 whitespace-pre-wrap text-xs text-gray-400">{f.body}</pre>
+                  </div>
+                  <div className="flex gap-2">
+                    {f.status !== "sent" && f.status !== "skipped" && (
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          const res = await fetch("/api/followups", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(f),
+                          });
+                          const data = await res.json();
+                          if (data.mailto) window.open(data.mailto, "_blank");
+                          setFollowups((prev) =>
+                            prev.map((x) => (x.id === f.id ? { ...x, status: "sent" } : x))
+                          );
+                          logActivity("Uppföljningsmejl skickat till " + f.email);
+                        }}
+                      >
+                        Skicka
+                      </Button>
+                    )}
+                    {f.status !== "sent" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setFollowups((prev) =>
+                            prev.map((x) => (x.id === f.id ? { ...x, status: "skipped" } : x))
+                          )
+                        }
+                      >
+                        Hoppa över
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

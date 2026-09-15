@@ -1,3 +1,5 @@
+import { buildFollowups } from "@/lib/followups";
+
 export function pushToCrm(person: {
   firstName: string;
   lastName?: string;
@@ -50,5 +52,20 @@ export function pushToCrm(person: {
       createdAt: new Date().toISOString(),
     });
     localStorage.setItem("maison_inbox", JSON.stringify(inbox.slice(0, 50)));
+    if (person.email) {
+      const extra = buildFollowups({
+        firstName: person.firstName,
+        lastName: person.lastName,
+        email: person.email,
+        phone: person.phone,
+        type: person.type,
+        source: person.source,
+      });
+      const fu = JSON.parse(localStorage.getItem("maison_followups") || "[]");
+      localStorage.setItem(
+        "maison_followups",
+        JSON.stringify([...extra, ...fu].slice(0, 100))
+      );
+    }
   } catch {}
 }
