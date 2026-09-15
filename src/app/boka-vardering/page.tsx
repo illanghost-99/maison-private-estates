@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 
 export default function BokaVarderingPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -16,9 +18,40 @@ export default function BokaVarderingPage() {
     preferredDate: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setError("");
+    setSending(true);
+    const parts = form.name.trim().split(/\s+/);
+    const firstName = parts[0] || form.name;
+    const lastName = parts.slice(1).join(" ") || "–";
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email: form.email,
+          phone: form.phone,
+          type: "värdering / möte",
+          preferredTime: form.preferredDate,
+          message:
+            (form.message || "Bokning via formulär") +
+            (form.address ? "\nAdress: " + form.address : "") +
+            "\nBostadstyp: " + form.type,
+          booking: true,
+          forceNotify: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Kunde inte skicka");
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kunde inte skicka");
+    } finally {
+      setSending(false);
+    }
   };
 
   if (submitted) {
@@ -98,9 +131,10 @@ export default function BokaVarderingPage() {
             <div>
               <label className="block text-sm text-gray-400 mb-2">
                 <Phone className="inline h-3.5 w-3.5 mr-1.5 text-gold" />
-                Telefon
+                Telefon *
               </label>
               <input
+                required
                 type="tel"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -170,8 +204,9 @@ export default function BokaVarderingPage() {
           </div>
 
           <div className="pt-2">
-            <Button type="submit" size="lg" className="w-full">
-              Skicka förfrågan
+            {error && <p className="text-sm text-danger text-center mb-3">{error}</p>}
+            <Button type="submit" size="lg" className="w-full" disabled={sending}>
+              {sending ? "Skickar…" : "Skicka förfrågan"}
             </Button>
             <p className="text-[11px] text-gray-600 text-center mt-4">
               Genom att skicka godkänner du att vi behandlar dina uppgifter
