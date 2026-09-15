@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Mic, Square, PhoneOff, Calendar, Mail, Users, ListTodo, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { defaultTasks } from "@/lib/admin-data";
-import type { WorkTask, CalEvent } from "@/lib/admin-data";
+import type { WorkTask, CalEvent, CrmPerson } from "@/lib/admin-data";
 
 type Scene = "idle" | "talk" | "listen" | "kalender" | "mejl" | "crm" | "uppgifter";
 
@@ -36,6 +36,8 @@ export default function KonferensPage() {
   const mutedRef = useRef(false);
   const historyRef = useRef<{ role: "user" | "assistant"; content: string }[]>([]);
   const wakeRef = useRef<any>(null);
+  const busyRef = useRef(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (sessionStorage.getItem("maison_admin") === "1") setAuthed(true);
@@ -53,22 +55,35 @@ export default function KonferensPage() {
     setMuted(true);
     setScene("talk");
     setHint("Agenten svarar");
-    const src = /tjena chefen/i.test(text)
-      ? "/audio/greet.mp3"
-      : "/api/tts?q=" + encodeURIComponent(text);
-    const audio = new Audio(src);
-    audio.volume = 1;
+    try { audioRef.current?.pause(); } catch {}
     const done = () => {
       speakingRef.current = false;
+      busyRef.current = false;
       mutedRef.current = false;
       setMuted(false);
       setHint("Din tur – prata");
       setScene("listen");
       after?.();
     };
-    audio.onended = done;
-    audio.onerror = done;
-    audio.play().catch(() => done());
+    fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    })
+      .then((r) => r.blob())
+      .then((blob) => {
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        audio.volume = 1;
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          done();
+        };
+        audio.onerror = done;
+        return audio.play();
+      })
+      .catch(() => done());
   }, []);
 
   const startListen = useCallback(() => {
@@ -102,7 +117,8 @@ export default function KonferensPage() {
       const last = e.results[e.results.length - 1];
       if (!last?.isFinal) return;
       const text = String(last[0]?.transcript || "").trim();
-      if (!text) return;
+      if (!text || busyRef.current) return;
+      busyRef.current = true;
       setHint("Hörde dig");
       historyRef.current = [...historyRef.current, { role: "user", content: text }].slice(-10);
       const tasks = load<WorkTask[]>("maison_tasks", defaultTasks);
@@ -116,18 +132,41 @@ export default function KonferensPage() {
         .then((data) => {
           if (data.action === "book") {
             setScene("kalender");
+            const ev = data.event || {};
             const events = load<CalEvent[]>("maison_events", []);
             events.push({
               id: "e" + Date.now(),
-              title: "Möte via konferens",
+              title: ev.title || "Möte via konferens",
               start: new Date(Date.now() + 86400000).toISOString(),
               end: new Date(Date.now() + 90000000).toISOString(),
-              type: "möte",
-              notes: text,
+              type: (ev.type as CalEvent["type"]) || "möte",
+              person: ev.person,
+              notes: [ev.when, ev.phone, ev.email, ev.notes].filter(Boolean).join(" · "),
             });
             save("maison_events", events);
           } else if (data.action === "mail") setScene("mejl");
-          else if (data.action === "crm") setScene("crm");
+          else if (data.action === "crm") {
+            setScene("crm");
+            const p = data.person || {};
+            const crm = load<CrmPerson[]>("maison_crm", []);
+            crm.unshift({
+              id: "conf-" + Date.now(),
+              firstName: p.firstName || "Kund",
+              lastName: p.lastName || "",
+              phone: p.phone || "",
+              email: p.email || "",
+              stage: "ny",
+              intent: "okänt",
+              score: 70,
+              area: "Konferens",
+              lastTouch: "Nu",
+              nextStep: "Ring",
+              notes: p.notes || text,
+              source: "Konferens",
+              flag: "📳",
+            });
+            save("maison_crm", crm.slice(0, 80));
+          }
           const reply = data.reply || "Okej.";
           historyRef.current = [...historyRef.current, { role: "assistant", content: reply }].slice(-10);
           speak(reply);
