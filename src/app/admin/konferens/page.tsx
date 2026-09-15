@@ -48,19 +48,15 @@ export default function KonferensPage() {
   const startListenRef = useRef<() => void>(() => {});
 
   const speak = useCallback((text: string, after?: () => void) => {
-    const clip =
-      /skickar/i.test(text) ? "/audio/skickar.mp3" :
-      /bokat/i.test(text) ? "/audio/bokat.mp3" :
-      /inlagd/i.test(text) ? "/audio/inlagd.mp3" :
-      /tar du/i.test(text) ? "/audio/dettar.mp3" :
-      /mejl|möte eller kund/i.test(text) ? "/audio/vad.mp3" :
-      "/audio/greet.mp3";
     speakingRef.current = true;
     mutedRef.current = true;
     setMuted(true);
     setScene("talk");
-    setHint("Ljud av – agenten svarar");
-    const audio = new Audio(clip);
+    setHint("Agenten svarar");
+    const src = /tjena chefen/i.test(text)
+      ? "/audio/greet.mp3"
+      : "/api/tts?q=" + encodeURIComponent(text);
+    const audio = new Audio(src);
     audio.volume = 1;
     const done = () => {
       speakingRef.current = false;
@@ -107,35 +103,33 @@ export default function KonferensPage() {
       if (!last?.isFinal) return;
       const text = String(last[0]?.transcript || "").trim();
       if (!text) return;
-      setHint("Hörde");
-      const t = text.toLowerCase();
-      if (/mejl|mail/.test(t)) {
-        setScene("mejl");
-        speak("Skickar.", startListenRef.current);
-      } else if (/boka|möte|kalender/.test(t)) {
-        setScene("kalender");
-        const events = load<CalEvent[]>("maison_events", []);
-        events.push({
-          id: "e" + Date.now(),
-          title: "Möte via konferens",
-          start: new Date(Date.now() + 86400000).toISOString(),
-          end: new Date(Date.now() + 90000000).toISOString(),
-          type: "möte",
-          notes: text,
-        });
-        save("maison_events", events);
-        speak("Bokat.", startListenRef.current);
-      } else if (/kund|crm/.test(t)) {
-        setScene("crm");
-        speak("Inlagd.", startListenRef.current);
-      } else if (/ring|sms/.test(t)) {
-        speak("Det tar du.", startListenRef.current);
-      } else if (/hej|tjena|hallå/.test(t)) {
-        speak("Här. Vad gör vi?", startListenRef.current);
-      } else {
-        setScene("uppgifter");
-        speak("Ja. Mejl, möte eller kund?", startListenRef.current);
-      }
+      setHint("Hörde dig");
+      const tasks = load<WorkTask[]>("maison_tasks", defaultTasks);
+      const p1 = tasks.filter((x) => x.priority === 1 && x.status !== "done").map((x) => x.title);
+      fetch("/api/konferens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, p1 }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.action === "book") {
+            setScene("kalender");
+            const events = load<CalEvent[]>("maison_events", []);
+            events.push({
+              id: "e" + Date.now(),
+              title: "Möte via konferens",
+              start: new Date(Date.now() + 86400000).toISOString(),
+              end: new Date(Date.now() + 90000000).toISOString(),
+              type: "möte",
+              notes: text,
+            });
+            save("maison_events", events);
+          } else if (data.action === "mail") setScene("mejl");
+          else if (data.action === "crm") setScene("crm");
+          speak(data.reply || "Okej.");
+        })
+        .catch(() => speak("Säg igen."));
     };
     recRef.current = rec;
     try { rec.start(); } catch { setError("Kunde inte starta mikrofon. Tryck start igen."); }
