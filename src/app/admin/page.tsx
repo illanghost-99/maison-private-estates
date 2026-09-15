@@ -235,7 +235,7 @@ export default function AdminPage() {
             </div>
           </div>
           <h1 className="font-display text-2xl text-white text-center mb-2">Mäklaradmin</h1>
-          <p className="text-sm text-gray-500 text-center mb-6">Ange PIN för kalender, CRM och AI-uppgifter.</p>
+          <p className="text-sm text-gray-500 text-center mb-6">Skriv koden för att se dina möten, kunder och uppgifter.</p>
           <form onSubmit={unlock} className="space-y-4">
             <input
               type="password"
@@ -259,9 +259,9 @@ export default function AdminPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <p className="text-gold text-sm tracking-[0.2em] uppercase mb-1">Admin · Erfan Irandost</p>
-            <h1 className="font-display text-3xl text-white">Arbetsyta</h1>
+            <h1 className="font-display text-3xl text-white">Din sida</h1>
             <p className="text-gray-500 text-sm mt-1">
-              Du tar det viktigaste. Agenten tar resten och lär sig av hur du arbetar.
+              Här ser du vad du ska göra idag. Ring det viktigaste. Agenten kan ta mejl och småsaker.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -286,13 +286,13 @@ export default function AdminPage() {
 
         <div className="flex flex-wrap gap-2 mb-8 border-b border-white/5 pb-4">
           {([
-            ["oversikt", "Översikt", BarChart3],
+            ["oversikt", "Idag", BarChart3],
             ["uppgifter", "Att göra", ListTodo],
-            ["kalender", "Kalender", Calendar],
-            ["crm", "CRM", Users],
+            ["kalender", "Möten", Calendar],
+            ["crm", "Kunder", Users],
             ["agent", "Agenten", Bot],
-            ["inbox", "Inbox", Inbox],
-            ["uppfoljning", "Uppföljning", Mail],
+            ["inbox", "Meddelanden", Inbox],
+            ["uppfoljning", "Mejl att skicka", Mail],
           ] as const).map(([id, label, Icon]) => (
             <button
               key={id}
@@ -319,7 +319,7 @@ export default function AdminPage() {
             <div className="rounded-xl border border-gold/20 bg-black-card p-6">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="h-5 w-5 text-gold" />
-                <h2 className="font-display text-xl text-white">Dagens briefing</h2>
+                <h2 className="font-display text-xl text-white">Vad du ska göra nu</h2>
               </div>
               <p className="text-sm text-gray-400 mb-4">
                 Fokusera på samtal, möten och fotografering. Agenten sköter utkast, påminnelser och utvärderingar.
@@ -337,7 +337,7 @@ export default function AdminPage() {
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: "P1 – du gör", value: p1.length, icon: Target },
+                { label: "Att ringa själv", value: p1.length, icon: Target },
                 { label: "Agenten tar", value: p3.length, icon: Bot },
                 { label: "Varma leads", value: crm.filter((c) => c.score >= 80).length, icon: TrendingUp },
                 { label: "Kommande möten", value: sortedEvents.length, icon: Calendar },
@@ -390,25 +390,26 @@ export default function AdminPage() {
 
         {tab === "uppgifter" && (
           <div className="space-y-8">
+            <p className="text-sm text-gray-500">Lista på jobb. 1 = ring själv. 2 = kan vänta. 3 = agenten kan göra det.</p>
             <PriorityBlock
-              label="P1 – Gör själv (viktigast)"
-              hint="Samtal och möten. Det som vinner affärer."
+              label="1 – Gör själv"
+              hint="Ring och boka. Det som ger affär idag."
               items={p1}
               onDone={markDone}
               onDraft={setDraftOpen}
               draftOpen={draftOpen}
             />
             <PriorityBlock
-              label="P2 – Du eller agenten"
-              hint="Förberedelse. Agenten kan ta fram underlag."
+              label="2 – Du eller agenten"
+              hint="Förberedelse. Inte bråttom."
               items={p2}
               onDone={markDone}
               onDraft={setDraftOpen}
               draftOpen={draftOpen}
             />
             <PriorityBlock
-              label="P3 – Agenten tar (minst bråttom)"
-              hint="Mejl, påminnelser och utvärderingar. Godkänn utkastet."
+              label="3 – Agenten tar"
+              hint="Mejl och påminnelser. Godkänn om du vill att det skickas."
               items={p3}
               onDone={markDone}
               onDraft={setDraftOpen}
@@ -420,7 +421,8 @@ export default function AdminPage() {
         {tab === "kalender" && (
           <div className="space-y-6">
             <div className="rounded-xl bg-black-card border border-white/5 p-6">
-              <h2 className="font-display text-xl text-white mb-4">Lägg till i kalendern</h2>
+              <h2 className="font-display text-xl text-white mb-1">Lägg till möte</h2>
+              <p className="text-sm text-gray-500 mb-4">Skriv vad, vem och när. Tryck Spara. iPhone-knappen lägger in det i din kalender.</p>
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <input
                   value={newEvent.title}
@@ -458,7 +460,7 @@ export default function AdminPage() {
                 </Button>
               </div>
               <p className="text-xs text-gray-600 mt-3">
-                Ladda ner .ics för iPhone-kalendern. Full Apple-synk kräver senare kalender-API.
+                iPhone = fil som öppnas i Kalender-appen.
               </p>
             </div>
             <div className="space-y-3">
@@ -490,8 +492,8 @@ export default function AdminPage() {
         {tab === "crm" && (
           <div className="space-y-4">
             <p className="text-sm text-gray-500">
-              Integrerat med chatt, bokningsformulär och Telegram. Nya kunder kommer in automatiskt.
-              Pipeline: ny → kontaktad → möte → aktiv → vunnen.
+              Alla personer som hört av sig. Ny = inte ringd. Möte = inbokad. Vunnen = affär klar.
+              ✅ ring nu. 📳 ring snart. 🅱️ har väntat för länge.
             </p>
             <CrmAdd onAdd={(p) => {
               setCrm((prev) => [p, ...prev]);
@@ -512,7 +514,7 @@ export default function AdminPage() {
                     <p className="text-xs text-gold mt-2">Nästa steg: {c.nextStep}</p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <Badge variant={c.score >= 80 ? "gold" : "outline"}>Score {c.score}</Badge>
+                    <Badge variant={c.score >= 80 ? "gold" : "outline"}>{c.score >= 80 ? "Het kund" : "Vanlig"}</Badge>
                     <Badge variant="outline">{c.stage}</Badge>
                     <div className="flex gap-2">
                       <a href={"tel:" + c.phone}>
@@ -545,10 +547,9 @@ export default function AdminPage() {
         {tab === "agent" && (
           <div className="space-y-6">
             <div className="rounded-xl bg-black-card border border-gold/15 p-6">
-              <h2 className="font-display text-xl text-white mb-2">Så lär sig agenten</h2>
+              <h2 className="font-display text-xl text-white mb-2">Vad agenten gör</h2>
               <p className="text-sm text-gray-400 mb-4">
-                När du öppnar flikar, markerar uppgifter och flyttar leads i CRM loggas det lokalt.
-                Agenten använder det för att prioritera nästa briefing.
+                Agenten är din digitala kollega. Den ser vad du bockar av och vilka kunder du flyttar, så morgondagens lista blir bättre.
               </p>
               <ul className="space-y-2 text-sm text-gray-400 mb-6">
                 <li className="flex gap-2"><AlertCircle className="h-4 w-4 text-gold shrink-0 mt-0.5" /> Du tar P1: ring, boka, stäng affär.</li>
@@ -572,7 +573,7 @@ export default function AdminPage() {
                 <li>• Ett kort tack efter varje möte. Agenten skriver, du skickar.</li>
                 <li>• En mening utvärdering efter mötet: mål, signal, nästa steg.</li>
                 <li>• Lägg mötet i iPhone-kalendern direkt så inget glöms.</li>
-                <li>• Håll CRM-steget uppdaterat. Då vet agenten vad som är P1 imorgon.</li>
+                <li>• Flytta kunden i listan när du ringt. Då vet agenten vad som är viktigast imorgon.</li>
               </ul>
               <p className="text-xs text-gray-600 mt-4">
                 Indikativ konvertering i panelen: {mockStats.conversionRate}% · pipeline {formatPrice(mockStats.monthlyRevenue)}
@@ -583,7 +584,8 @@ export default function AdminPage() {
 
         {tab === "inbox" && (
           <div className="rounded-xl bg-black-card border border-white/5 p-6">
-            <h2 className="font-display text-xl text-white mb-2">Inbox från hemsidan</h2>
+            <h2 className="font-display text-xl text-white mb-2">Meddelanden från hemsidan</h2>
+            <p className="text-sm text-gray-500 mb-3">Folk som skrivit via sajten. Öppna och ring de som vill boka.</p>
             <p className="text-sm text-gray-500 mb-6">
               Formulär och chattbokningar. Seriösa leads ska också ha gått till Telegram.
             </p>
@@ -595,7 +597,7 @@ export default function AdminPage() {
                 <div key={item.id} className="p-4 rounded-xl bg-black border border-white/5">
                   <div className="flex justify-between gap-3 mb-2">
                     <p className="text-sm text-white font-medium">{item.name}</p>
-                    <Badge variant={item.serious ? "gold" : "outline"}>Score {item.score}</Badge>
+                    <Badge variant={item.serious ? "gold" : "outline"}>{item.serious ? "Seriös" : "Fråga"}</Badge>
                   </div>
                   <p className="text-sm text-gray-400 mb-3">{item.message}</p>
                   <div className="flex gap-2">
@@ -619,8 +621,7 @@ export default function AdminPage() {
         {tab === "uppfoljning" && (
           <div className="space-y-4">
             <p className="text-sm text-gray-500">
-              Automatiska mejl: tack efter 2 timmar, påminnelse efter 2 dygn, extra vid visning/värdering.
-              Utan Resend öppnas mejlet hos dig – agenten loggar och avisera på Telegram.
+              Mejl som ska gå ut till kunder. Tack-mejl efter några timmar, påminnelse efter två dagar. Tryck skicka när du är nöjd.
             </p>
             {followups.length === 0 && (
               <p className="text-sm text-gray-500">Inga uppföljningar ännu. De skapas när en kund lämnar e-post.</p>
@@ -721,7 +722,7 @@ function CrmAdd({ onAdd }: { onAdd: (p: CrmPerson) => void }) {
           });
           setOpen(false);
           setF({ firstName: "", lastName: "", phone: "", email: "", notes: "" });
-        }}>Spara i CRM</Button>
+        }}>Spara kund</Button>
         <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Avbryt</Button>
       </div>
     </div>
