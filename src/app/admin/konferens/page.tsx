@@ -113,7 +113,7 @@ export default function KonferensPage() {
     rec.maxAlternatives = 1;
     rec.onstart = () => {
       setListening(true);
-      setHint("Prata nu – texten kommer upp här");
+      setHint("Lyssnar");
     };
     rec.onresult = (e: any) => {
       let said = "";
@@ -175,16 +175,9 @@ export default function KonferensPage() {
       <h1 className="font-display text-3xl text-white text-center mt-2 mb-3">Prata med agenten</h1>
       <p className="text-center text-gray-500 text-xs mb-3">{hint}</p>
 
-      {draft && (
-        <p className="text-center text-white text-lg mb-3 min-h-8">{draft}</p>
-      )}
-
       <div className="h-48 overflow-y-auto rounded-xl border border-gold/15 p-3 mb-5 space-y-2">
         {lines.length === 0 && (
-          <p className="text-gray-600 text-sm">
-            Tryck mikrofonen och prata. Det du säger ska synas som text, sen svarar agenten.
-            Går det inte: tryck mikrofonen på tangentbordet i fältet nedan.
-          </p>
+          <p className="text-gray-600 text-sm text-center">Tryck på mikrofonen. Prata. Agenten svarar.</p>
         )}
         {lines.map((m, i) => (
           <p key={i} className={m.who === "Agent" ? "text-gold text-sm" : "text-white text-sm"}>
@@ -223,7 +216,7 @@ export default function KonferensPage() {
               setInput("");
             }
           }}
-          placeholder="Eller diktera med tangentbordets mikrofon"
+          placeholder="Skriv bara om du måste"
           className="flex-1 rounded-lg bg-white/5 border border-gold/20 px-3 py-3 text-white text-sm"
           inputMode="text"
           autoComplete="off"
@@ -232,9 +225,7 @@ export default function KonferensPage() {
           <Send className="h-4 w-4" />
         </Button>
       </div>
-      <p className="text-[11px] text-gray-600 mt-2 text-center">
-        På iPhone: tryck i fältet → mikrofonen på tangentbordet. Det är samma diktering som när du skriver sms.
-      </p>
+
       <div className="text-center mt-6">
         <Link href="/admin" className="text-xs text-gray-500">Tillbaka till admin</Link>
       </div>
