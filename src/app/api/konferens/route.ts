@@ -67,10 +67,35 @@ export async function POST(req: NextRequest) {
     const history: Turn[] = Array.isArray(body.history) ? body.history.slice(-10) : [];
     if (!text) return NextResponse.json({ reply: "Säg igen.", action: "none" });
 
+    const t = text.toLowerCase();
+    if (/skicka.*(mejl|mail)|uppfölj/.test(t))
+      return NextResponse.json({ reply: "Då skickar jag mejlen.", action: "mail" });
+    if (/boka|nytt möte|lägg in möte/.test(t))
+      return NextResponse.json({
+        reply: "Jag bokar det.",
+        action: "book",
+        event: { title: "Möte via konferens", notes: text, type: "möte" },
+      });
+    if (/lägg in kund|ny kund/.test(t))
+      return NextResponse.json({
+        reply: "Kunden är inne.",
+        action: "crm",
+        person: { firstName: "Kund", notes: text },
+      });
+    if (/vad ska jag|dagens|viktigt|lista/.test(t))
+      return NextResponse.json({
+        reply: p1.length ? "Först: " + p1[0] + "." : "Inget akut just nu.",
+        action: "brief",
+      });
+    if (/ring|sms/.test(t))
+      return NextResponse.json({ reply: "Det tar du.", action: "none" });
+    if (/hej|tjena|hallå|hör du/.test(t))
+      return NextResponse.json({ reply: "Här. Jag lyssnar.", action: "none" });
+
     const key = process.env.OPENAI_API_KEY;
     if (!key) {
       return NextResponse.json({
-        reply: "OpenAI-nyckeln saknas i Vercel. Lägg OPENAI_API_KEY och gör Redeploy.",
+        reply: "Uppfattat. Ska jag boka, lägga in kund eller skicka mejl?",
         action: "none",
       });
     }
@@ -106,7 +131,7 @@ export async function POST(req: NextRequest) {
       const err = await res.text();
       console.error("openai", res.status, err.slice(0, 300));
       return NextResponse.json({
-        reply: "Jag når inte GPT just nu. Kolla nyckel och credits.",
+        reply: "Uppfattat. Ska jag boka, lägga in kund eller skicka mejl?",
         action: "none",
       });
     }

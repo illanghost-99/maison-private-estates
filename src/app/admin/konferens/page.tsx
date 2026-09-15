@@ -62,25 +62,19 @@ export default function KonferensPage() {
       setScene("listen");
       after?.();
     };
-    fetch("/api/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    })
-      .then((r) => r.blob())
-      .then((blob) => {
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        audio.volume = 1;
-        audio.onended = () => {
-          URL.revokeObjectURL(url);
-          done();
-        };
-        audio.onerror = done;
-        return audio.play();
-      })
-      .catch(() => done());
+    const clip =
+      /tjena|lyssnar|här\./i.test(text) ? "/audio/greet.mp3" :
+      /mejlen|skickar/i.test(text) ? "/audio/skickar.mp3" :
+      /bokar|bokat/i.test(text) ? "/audio/bokat.mp3" :
+      /inne|inlagd/i.test(text) ? "/audio/inlagd.mp3" :
+      /tar du/i.test(text) ? "/audio/dettar.mp3" :
+      "/audio/vad.mp3";
+    const audio = new Audio(clip);
+    audioRef.current = audio;
+    audio.volume = 1;
+    audio.onended = done;
+    audio.onerror = done;
+    audio.play().catch(() => done());
   }, []);
 
   const startListen = useCallback(() => {
