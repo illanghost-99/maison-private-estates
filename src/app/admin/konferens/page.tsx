@@ -66,7 +66,7 @@ export default function KonferensPage() {
     } catch {}
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "sv-SE";
-    u.rate = 1;
+    u.rate = 1.15;
     u.pitch = 0.8;
     u.volume = 1;
     const voices = window.speechSynthesis.getVoices();
@@ -94,30 +94,34 @@ export default function KonferensPage() {
     }
     const rec = new SR();
     rec.lang = "sv-SE";
-    rec.continuous = false;
-    rec.interimResults = false;
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
     rec.onstart = () => {
       setScene("listen");
       setHint("Lyssnar");
     };
     rec.onend = () => {
       if (liveRef.current && !speakingRef.current) {
-        setTimeout(() => {
-          try { rec.start(); } catch {}
-        }, 300);
+        try { rec.start(); } catch {}
       }
     };
-    rec.onerror = () => setHint("Hörde inget. Prata igen.");
+    rec.onerror = (ev: any) => {
+      if (ev?.error === "no-speech" && liveRef.current) {
+        try { rec.start(); } catch {}
+      }
+    };
     rec.onresult = (e: any) => {
-      const text = e.results[0][0].transcript;
-      if (!text) return;
-      setHint("Hörde dig");
+      const last = e.results[e.results.length - 1];
+      if (!last?.isFinal) return;
+      const text = String(last[0]?.transcript || "").trim();
+      if (!text || speakingRef.current) return;
+      try { rec.stop(); } catch {}
+      setHint("Hörde");
       const t = text.toLowerCase();
       if (/mejl|mail/.test(t)) {
         setScene("mejl");
-        const fu = load<Followup[]>("maison_followups", []);
-        save("maison_followups", fu.map((f) => f.status === "sent" || f.status === "skipped" ? f : { ...f, status: "sent" as const }));
-        speak("Skickar mejlen.", startListenRef.current);
+        speak("Skickar.", startListenRef.current);
       } else if (/boka|möte|kalender/.test(t)) {
         setScene("kalender");
         const events = load<CalEvent[]>("maison_events", []);
@@ -130,15 +134,17 @@ export default function KonferensPage() {
           notes: text,
         });
         save("maison_events", events);
-        speak("Lagt in i kalendern.", startListenRef.current);
+        speak("Bokat.", startListenRef.current);
       } else if (/kund|crm/.test(t)) {
         setScene("crm");
-        speak("Kunden är inne i CRM.", startListenRef.current);
+        speak("Inlagd.", startListenRef.current);
       } else if (/ring|sms/.test(t)) {
-        speak("Det ringer du.", startListenRef.current);
+        speak("Det tar du.", startListenRef.current);
+      } else if (/hej|tjena|hallå/.test(t)) {
+        speak("Här. Vad gör vi?", startListenRef.current);
       } else {
         setScene("uppgifter");
-        speak("Säg skicka mejl, boka möte eller lägg in kund.", startListenRef.current);
+        speak("Ja. Mejl, möte eller kund?", startListenRef.current);
       }
     };
     recRef.current = rec;
@@ -162,9 +168,8 @@ export default function KonferensPage() {
     setScene("uppgifter");
     const text =
       GREETS[Math.floor(Math.random() * GREETS.length)] +
-      " " +
-      (p1.length ? "Viktigast idag: " + p1[0].title + ". " : "Inga akuta P1. ") +
-      "Säg skicka mejl, boka möte eller lägg in kund.";
+      (p1.length ? " Först: " + p1[0].title + "." : " Inget akut.") +
+      " Jag lyssnar.";
     speak(text, startListen);
   };
 
