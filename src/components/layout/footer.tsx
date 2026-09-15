@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, Phone, MapPin, Instagram, Linkedin } from "lucide-react";
+import { Mail, Phone, MapPin, Instagram } from "lucide-react";
 import { EmailTrigger } from "@/components/contact/email-modal";
 
 export function Footer() {
@@ -77,16 +77,24 @@ export function Footer() {
             </h4>
             <div className="flex gap-4 mb-8">
               <a
-                href="#"
+                href="https://www.instagram.com/erfan.maklare"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
                 className="h-10 w-10 rounded-full border border-gold/20 flex items-center justify-center text-gray-400 hover:text-gold hover:border-gold/50 transition-all"
               >
                 <Instagram className="h-4 w-4" />
               </a>
               <a
-                href="#"
+                href="https://www.tiktok.com/@erfan.maklare"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="TikTok"
                 className="h-10 w-10 rounded-full border border-gold/20 flex items-center justify-center text-gray-400 hover:text-gold hover:border-gold/50 transition-all"
               >
-                <Linkedin className="h-4 w-4" />
+                <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.88-2.88 2.89 2.89 0 0 1 2.88-2.88c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15.3a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.73a8.18 8.18 0 0 0 4.76 1.52V6.8a4.84 4.84 0 0 1-1-.11z" />
+                </svg>
               </a>
             </div>
             <p className="text-xs text-gray-600 leading-relaxed">
