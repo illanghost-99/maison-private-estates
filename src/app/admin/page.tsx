@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Calendar,
   Inbox,
@@ -264,6 +265,9 @@ export default function AdminPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link href="/admin/konferens">
+              <Button size="sm">Konferens</Button>
+            </Link>
             <a href="tel:+46736334641">
               <Button variant="outline" size="sm">073-633 46 41</Button>
             </a>
