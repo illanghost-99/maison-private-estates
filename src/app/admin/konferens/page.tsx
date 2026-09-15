@@ -52,6 +52,18 @@ export default function KonferensPage() {
       return;
     }
     window.speechSynthesis.cancel();
+    try {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      gain.gain.value = 0.04;
+      osc.frequency.value = 440;
+      osc.start();
+      osc.stop(ctx.currentTime + 0.08);
+      ctx.resume();
+    } catch {}
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "sv-SE";
     u.rate = 1;
