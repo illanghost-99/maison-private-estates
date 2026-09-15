@@ -84,9 +84,10 @@ export default function KonferensPage() {
       setError("Lyssning saknas. Använd Safari eller Chrome.");
       return;
     }
+    try { recRef.current?.stop(); } catch {}
     const rec = new SR();
     rec.lang = "sv-SE";
-    rec.continuous = true;
+    rec.continuous = false;
     rec.interimResults = true;
     rec.maxAlternatives = 1;
     rec.onstart = () => {
@@ -94,8 +95,10 @@ export default function KonferensPage() {
       setHint("Lyssnar");
     };
     rec.onend = () => {
-      if (liveRef.current) {
-        try { rec.start(); } catch {}
+      if (liveRef.current && !speakingRef.current) {
+        setTimeout(() => {
+          try { rec.start(); } catch {}
+        }, 200);
       }
     };
     rec.onerror = (ev: any) => {
@@ -106,8 +109,10 @@ export default function KonferensPage() {
     rec.onresult = (e: any) => {
       if (mutedRef.current || speakingRef.current) return;
       const last = e.results[e.results.length - 1];
+      const text = String(last?.[0]?.transcript || "").trim();
+      if (!text) return;
+      setHint(text);
       if (!last?.isFinal) return;
-      const text = String(last[0]?.transcript || "").trim();
       if (!text || busyRef.current) return;
       busyRef.current = true;
       setHint("Hörde dig");
@@ -175,10 +180,13 @@ export default function KonferensPage() {
     liveRef.current = true;
     setLive(true);
     setScene("uppgifter");
-    speak("Tjena chefen. Jag lyssnar.", startListen);
-    navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {
-      setError("Tillåt mikrofonen.");
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      (window as any).__mic = stream;
+    }).catch(() => {
+      setError("Tillåt mikrofonen i Safari.");
     });
+    startListen();
+    speak("Tjena chefen. Jag lyssnar.");
     navigator.wakeLock?.request("screen").then((s: any) => {
       wakeRef.current = s;
     }).catch(() => {});
