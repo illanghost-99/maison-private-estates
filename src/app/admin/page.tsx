@@ -101,7 +101,56 @@ export default function AdminPage() {
     if (!authed) return;
     fetch("/api/reminders").catch(() => {});
     setTasks(load("maison_tasks", defaultTasks));
-    setCrm(load("maison_crm", defaultCrm));
+    const base = load<CrmPerson[]>("maison_crm", defaultCrm);
+    const inbox = load<{ id: string; name: string; email: string; phone: string; message: string; score: number; serious: boolean; createdAt: string }[]>("maison_inbox", []);
+    const fromInbox: CrmPerson[] = inbox.map((i) => {
+      const parts = (i.name || "").trim().split(/\s+/);
+      return {
+        id: "inbox-" + i.id,
+        firstName: parts[0] || i.name || "Kund",
+        lastName: parts.slice(1).join(" "),
+        phone: i.phone || "",
+        email: i.email || "",
+        stage: "ny" as const,
+        intent: i.serious ? "köpa" : "okänt" as const,
+        score: i.score || 50,
+        area: "Webb",
+        lastTouch: new Date(i.createdAt).toLocaleString("sv-SE"),
+        nextStep: i.serious ? "Ring omedelbart" : "Ring vid tillfälle",
+        notes: i.message || "",
+        source: "Hemsidan",
+        flag: i.serious ? "✅" : "📳",
+      };
+    });
+    const merged = [...fromInbox, ...base].filter(
+      (c, idx, arr) => arr.findIndex((x) => x.phone && x.phone === c.phone ? true : x.id === c.id) === idx
+    );
+    setCrm(merged);
+    fetch("/api/leads")
+      .then((r) => r.json())
+      .then((data) => {
+        const extra: CrmPerson[] = (data.leads || []).map((l: { id: string; firstName: string; lastName: string; phone: string; email: string; message: string; flag: string; createdAt: string; type: string }) => ({
+          id: "api-" + l.id,
+          firstName: l.firstName,
+          lastName: l.lastName,
+          phone: l.phone,
+          email: l.email,
+          stage: "ny" as const,
+          intent: /sälj/.test(l.type + l.message) ? "sälja" : /köp|boka|visning/.test((l.type + l.message).toLowerCase()) ? "köpa" : "okänt",
+          score: l.flag === "hot" ? 90 : 55,
+          area: "Webb / chatt",
+          lastTouch: new Date(l.createdAt).toLocaleString("sv-SE"),
+          nextStep: l.flag === "hot" ? "Ring omedelbart" : "Ring vid tillfälle",
+          notes: l.message || l.type,
+          source: "API / Telegram",
+          flag: l.flag === "hot" ? "✅" : l.flag === "overdue" ? "🅱️" : "📳",
+        }));
+        setCrm((prev) => {
+          const all = [...extra, ...prev];
+          return all.filter((c, i) => all.findIndex((x) => (x.phone && x.phone === c.phone) || x.id === c.id) === i);
+        });
+      })
+      .catch(() => {});
     setEvents(load("maison_events", defaultWeekEvents()));
     setActivity(load("maison_activity", []));
     setLocalInbox(load("maison_inbox", []));
@@ -423,17 +472,23 @@ export default function AdminPage() {
         {tab === "crm" && (
           <div className="space-y-4">
             <p className="text-sm text-gray-500">
-              Pipeline: ny → kontaktad → möte → aktiv → vunnen. Hög score = ring först.
+              Integrerat med chatt, bokningsformulär och Telegram. Nya kunder kommer in automatiskt.
+              Pipeline: ny → kontaktad → möte → aktiv → vunnen.
             </p>
+            <CrmAdd onAdd={(p) => {
+              setCrm((prev) => [p, ...prev]);
+              logActivity("Lade till i CRM: " + p.firstName);
+            }} />
             {hotLeads.map((c) => (
               <div key={c.id} className="rounded-xl bg-black-card border border-white/5 p-5">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div>
                     <p className="text-white font-medium">
+                      {c.flag ? c.flag + " " : ""}
                       {c.firstName} {c.lastName}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {c.area} · {c.intent} · senast {c.lastTouch}
+                      {c.source || "CRM"} · {c.area} · {c.intent} · {c.lastTouch}
                     </p>
                     <p className="text-sm text-gray-400 mt-2">{c.notes}</p>
                     <p className="text-xs text-gold mt-2">Nästa steg: {c.nextStep}</p>
@@ -542,6 +597,52 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function CrmAdd({ onAdd }: { onAdd: (p: CrmPerson) => void }) {
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState({ firstName: "", lastName: "", phone: "", email: "", notes: "" });
+  if (!open) {
+    return (
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)} className="gap-2">
+        <Plus className="h-3.5 w-3.5" /> Ny kund
+      </Button>
+    );
+  }
+  return (
+    <div className="rounded-xl border border-gold/20 bg-black-card p-4 space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <input className="bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-white" placeholder="Förnamn" value={f.firstName} onChange={(e) => setF({ ...f, firstName: e.target.value })} />
+        <input className="bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-white" placeholder="Efternamn" value={f.lastName} onChange={(e) => setF({ ...f, lastName: e.target.value })} />
+        <input className="bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-white" placeholder="Telefon" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
+        <input className="bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-white" placeholder="E-post" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
+      </div>
+      <input className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-white" placeholder="Anteckning" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} />
+      <div className="flex gap-2">
+        <Button size="sm" onClick={() => {
+          if (!f.firstName) return;
+          onAdd({
+            id: "manual-" + Date.now(),
+            firstName: f.firstName,
+            lastName: f.lastName,
+            phone: f.phone,
+            email: f.email,
+            stage: "ny",
+            intent: "okänt",
+            score: 60,
+            area: "Manuell",
+            lastTouch: "Nu",
+            nextStep: "Ring",
+            notes: f.notes,
+            source: "Manuell",
+          });
+          setOpen(false);
+          setF({ firstName: "", lastName: "", phone: "", email: "", notes: "" });
+        }}>Spara i CRM</Button>
+        <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Avbryt</Button>
       </div>
     </div>
   );

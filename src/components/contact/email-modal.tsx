@@ -58,6 +58,24 @@ export function EmailModal({ open, onClose }: Props) {
           createdAt: new Date().toISOString(),
         });
         localStorage.setItem(key, JSON.stringify(prev.slice(0, 50)));
+        const crm = JSON.parse(localStorage.getItem("maison_crm") || "[]");
+        crm.unshift({
+          id: "web-" + Date.now(),
+          firstName,
+          lastName,
+          phone,
+          email,
+          stage: "ny",
+          intent: data.flag === "hot" ? "köpa" : "okänt",
+          score: data.flag === "hot" ? 90 : 55,
+          area: "Webb",
+          lastTouch: "Nu",
+          nextStep: data.flag === "hot" ? "Ring omedelbart" : "Ring vid tillfälle",
+          notes: message,
+          source: "Hemsidan",
+          flag: data.flag === "hot" ? "✅" : "📳",
+        });
+        localStorage.setItem("maison_crm", JSON.stringify(crm.slice(0, 80)));
       } catch {}
       setDone(true);
       setFirstName("");

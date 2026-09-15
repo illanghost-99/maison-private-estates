@@ -27,6 +27,8 @@ export interface CrmPerson {
   lastTouch: string;
   nextStep: string;
   notes: string;
+  source?: string;
+  flag?: "✅" | "📳" | "🅱️";
 }
 
 export interface CalEvent {
