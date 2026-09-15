@@ -6,9 +6,7 @@ import { Mic, Square, PhoneOff, Calendar, Mail, Users, ListTodo, MicOff } from "
 import { Button } from "@/components/ui/button";
 import { defaultTasks } from "@/lib/admin-data";
 import type { WorkTask, CalEvent } from "@/lib/admin-data";
-import type { Followup } from "@/lib/followups";
 
-const GREETS = ["Tjena chefen.", "Hej boss.", "Tjena topp säljaren.", "Hej Erfan. Körläge igång."];
 type Scene = "idle" | "talk" | "listen" | "kalender" | "mejl" | "crm" | "uppgifter";
 
 function load<T>(key: string, fallback: T): T {
