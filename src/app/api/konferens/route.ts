@@ -26,6 +26,8 @@ export async function POST(req: NextRequest) {
     const action = actionOf(text);
     const key = process.env.GEMINI_API_KEY;
     let reply = "";
+    let error = "";
+    if (!key) error = "gemini_key_missing";
 
     if (key) {
       const parts = [];
@@ -65,7 +67,10 @@ export async function POST(req: NextRequest) {
             }
           );
           clearTimeout(to);
-          if (!res.ok) continue;
+          if (!res.ok) {
+            error = "gemini_" + res.status;
+            continue;
+          }
           const data = await res.json();
           reply = String(data.candidates?.[0]?.content?.parts?.[0]?.text || "")
             .replace(/```json|```/g, "")
@@ -77,7 +82,9 @@ export async function POST(req: NextRequest) {
             } catch {}
           }
           if (reply) break;
-        } catch {}
+        } catch (e: any) {
+          error = e?.name === "AbortError" ? "gemini_timeout" : "gemini_network";
+        }
       }
     }
 
@@ -94,12 +101,19 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
+      ok: !error || Boolean(reply),
+      error: error || undefined,
       reply: reply.slice(0, 280),
       action,
       taskTitle: text.slice(0, 80),
       event: action === "book" ? { title: "Möte", notes: text, type: "möte" } : undefined,
     });
   } catch {
-    return NextResponse.json({ reply: "Säg igen.", action: "none" });
+    return NextResponse.json({
+      ok: false,
+      error: "bad_request",
+      reply: "Säg igen.",
+      action: "none",
+    });
   }
 }
