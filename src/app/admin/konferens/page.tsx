@@ -66,17 +66,25 @@ export default function KonferensPage() {
     setDraft("");
     setLines((l) => [...l, { who: "Du", text }]);
     histRef.current = [...histRef.current, { role: "user", content: text }].slice(-10);
-    setHint("Skickar till agenten...");
+    setHint("Tänker...");
     const tasks = load<WorkTask[]>("maison_tasks", defaultTasks);
     const p1 = tasks.filter((x) => x.priority === 1 && x.status !== "done").map((x) => x.title);
+    const local =
+      /vad ska jag|idag|att göra/.test(text.toLowerCase())
+        ? (p1[0] ? "Börja med: " + p1[0] + "." : "Inget akut. Ring en kund eller boka ett möte.")
+        : "";
     try {
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), 5000);
       const res = await fetch("/api/konferens", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, p1, history: histRef.current }),
+        signal: ac.signal,
       });
+      clearTimeout(timer);
       const data = await res.json();
-      const reply = data.reply || "Okej.";
+      const reply = data.reply || local || "Jag är med. Vad gör vi?";
       if (data.action === "book") {
         const events = load<CalEvent[]>("maison_events", []);
         events.push({
@@ -110,8 +118,14 @@ export default function KonferensPage() {
         else setHint("Tryck på mikrofonen");
       });
     } catch {
-      busyRef.current = false;
-      setHint("Fel. Försök igen.");
+      const fallback = local || "Jag är med. Vad gör vi?";
+      setLines((l) => [...l, { who: "Agent", text: fallback }]);
+      setHint("Svarar...");
+      speakOut(fallback, () => {
+        busyRef.current = false;
+        if (liveRef.current) startListen();
+        else setHint("Tryck på mikrofonen");
+      });
     }
   }
 

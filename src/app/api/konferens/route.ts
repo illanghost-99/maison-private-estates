@@ -44,8 +44,10 @@ export async function POST(req: NextRequest) {
       const sys =
         AGENT_SYSTEM.replace("Svara BARA med JSON", "Svara i vanlig svenska. Ingen JSON.") +
         (p1.length ? " Viktigast idag: " + p1.slice(0, 3).join(". ") + "." : " Inget akut på listan.");
-      for (const model of ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-flash-latest"]) {
+      for (const model of ["gemini-2.0-flash", "gemini-1.5-flash"]) {
         try {
+          const ac = new AbortController();
+          const to = setTimeout(() => ac.abort(), 2800);
           const res = await fetch(
             "https://generativelanguage.googleapis.com/v1beta/models/" +
               model +
@@ -59,8 +61,10 @@ export async function POST(req: NextRequest) {
                 contents,
                 generationConfig: { maxOutputTokens: 120, temperature: 0.4 },
               }),
+              signal: ac.signal,
             }
           );
+          clearTimeout(to);
           if (!res.ok) continue;
           const data = await res.json();
           reply = String(data.candidates?.[0]?.content?.parts?.[0]?.text || "")
