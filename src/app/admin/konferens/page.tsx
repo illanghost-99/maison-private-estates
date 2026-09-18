@@ -76,13 +76,25 @@ export default function KonferensPage() {
         const events = load<CalEvent[]>("maison_events", []);
         events.push({
           id: "e" + Date.now(),
-          title: "Möte via konferens",
+          title: data.event?.title || "Möte via konferens",
           start: new Date(Date.now() + 86400000).toISOString(),
           end: new Date(Date.now() + 90000000).toISOString(),
           type: "möte",
           notes: text,
         });
         save("maison_events", events);
+      }
+      if (data.action === "task") {
+        const all = load<WorkTask[]>("maison_tasks", defaultTasks);
+        all.unshift({
+          id: "k" + Date.now(),
+          title: data.taskTitle || text.slice(0, 80),
+          why: "Från konferens",
+          priority: (data.taskPriority === 1 || data.taskPriority === 2 ? data.taskPriority : 3) as 1 | 2 | 3,
+          owner: data.taskPriority === 1 ? "erfan" : "agent",
+          status: "open",
+        });
+        save("maison_tasks", all);
       }
       histRef.current = [...histRef.current, { role: "assistant", content: reply }].slice(-10);
       setLines((l) => [...l, { who: "Agent", text: reply }]);
