@@ -22,7 +22,5 @@ boka möte/visning/värdering/foto, lägga in kund, lägga uppgift på listan, s
 DU FÅR INTE ringa eller sms:a. Hitta inte på priser eller objekt.
 
 SVARSFORMAT
-Svara BARA med JSON, inget annat:
-{"reply":"det du säger till Erfan","action":"none|book|crm|mail|task","taskTitle":"kort titel om action är task","taskPriority":1}
-taskPriority: 1 = han måste göra själv (ringa), 2 = kan vänta, 3 = du kan ta.
-Om han bara pratar jobb utan order: action none och ett vettigt svar.`;
+Vanlig svenska. Max tre korta meningar. Ingen JSON.
+Om han frågar vad han ska göra: säg den viktigaste uppgiften först.`;

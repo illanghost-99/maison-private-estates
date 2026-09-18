@@ -40,19 +40,24 @@ export default function KonferensPage() {
   }, []);
 
   function speakOut(text: string, after?: () => void) {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      after?.();
+    };
+    setTimeout(finish, 4000);
     try { window.speechSynthesis?.cancel(); } catch {}
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "sv-SE";
-    u.rate = 1.05;
-    u.pitch = 0.8;
+    u.rate = 1.08;
+    u.pitch = 0.85;
     const voices = window.speechSynthesis?.getVoices?.() || [];
-    const male = voices.find((v) => /sv/i.test(v.lang) && /male|man|erik|oskar|alva/i.test(v.name))
-      || voices.find((v) => /sv/i.test(v.lang));
-    if (male) u.voice = male;
-    u.onend = () => after?.();
-    u.onerror = () => after?.();
-    window.speechSynthesis?.speak(u);
-    new Audio("/audio/vad.mp3").play().catch(() => {});
+    const sv = voices.find((v) => /sv/i.test(v.lang));
+    if (sv) u.voice = sv;
+    u.onend = finish;
+    u.onerror = finish;
+    try { window.speechSynthesis?.speak(u); } catch { finish(); }
   }
 
   async function sendToAgent(text: string) {
