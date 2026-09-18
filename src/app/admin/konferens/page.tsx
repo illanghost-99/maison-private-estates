@@ -34,10 +34,17 @@ export default function KonferensPage() {
   const recRef = useRef<any>(null);
   const busyRef = useRef(false);
   const histRef = useRef<{ role: string; content: string }[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (sessionStorage.getItem("maison_admin") === "1") setAuthed(true);
   }, []);
+
+  function unlockAudio() {
+    if (!audioRef.current) audioRef.current = new Audio("/audio/greet.mp3");
+    audioRef.current.volume = 1;
+    audioRef.current.play().catch(() => {});
+  }
 
   function speakOut(text: string, after?: () => void) {
     let done = false;
@@ -46,18 +53,29 @@ export default function KonferensPage() {
       done = true;
       after?.();
     };
-    setTimeout(finish, 4000);
-    try { window.speechSynthesis?.cancel(); } catch {}
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "sv-SE";
-    u.rate = 1.08;
-    u.pitch = 0.85;
-    const voices = window.speechSynthesis?.getVoices?.() || [];
-    const sv = voices.find((v) => /sv/i.test(v.lang));
-    if (sv) u.voice = sv;
-    u.onend = finish;
-    u.onerror = finish;
-    try { window.speechSynthesis?.speak(u); } catch { finish(); }
+    const clip =
+      /bokar|bokat|möte|visning/i.test(text) ? "/audio/bokat.mp3" :
+      /mejl|skickar/i.test(text) ? "/audio/skickar.mp3" :
+      /kund|inne/i.test(text) ? "/audio/inlagd.mp3" :
+      /listan|börja med|idag|akut/i.test(text) ? "/audio/vad.mp3" :
+      /tjena|lyssnar|här/i.test(text) ? "/audio/greet.mp3" :
+      "/audio/vad.mp3";
+    const el = audioRef.current || new Audio(clip);
+    audioRef.current = el;
+    el.src = clip;
+    el.volume = 1;
+    el.onended = finish;
+    el.onerror = finish;
+    el.play().catch(() => finish());
+    setTimeout(finish, 5000);
+    try {
+      window.speechSynthesis?.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "sv-SE";
+      u.rate = 1.05;
+      u.pitch = 0.85;
+      window.speechSynthesis?.speak(u);
+    } catch {}
   }
 
   async function sendToAgent(text: string) {
@@ -180,6 +198,7 @@ export default function KonferensPage() {
     }
     liveRef.current = true;
     setLive(true);
+    unlockAudio();
     startListen();
   }
 
